@@ -1,4 +1,4 @@
-package com.library.commoncore;
+package com.certimaster.commoncore;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

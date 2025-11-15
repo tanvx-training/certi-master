@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/certimaster-common/common-core/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/certimaster-common/common-exception/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/certimaster-common/common-kafka/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/certimaster-common/common-logging/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/certimaster-common/common-redis/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/certimaster-common/common-security/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/certimaster-infrastructure/api-gateway/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/certimaster-infrastructure/config-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/certimaster-infrastructure/eureka-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/certimaster-services/analytics-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/certimaster-services/auth-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/certimaster-services/blog-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/certimaster-services/exam-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/certimaster-services/result-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
   </component>
 </project>

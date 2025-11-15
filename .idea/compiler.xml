@@ -9,20 +9,32 @@
         </processorPath>
         <module name="com.certimaster.common-redis.main" />
       </profile>
-      <profile name="Annotation profile for common-redis" enabled="true">
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="config-server" />
+        <module name="auth-service" />
+        <module name="common-exception" />
+        <module name="api-gateway" />
+        <module name="analytics-service" />
+        <module name="result-service" />
+        <module name="blog-service" />
+        <module name="eureka-server" />
+        <module name="exam-service" />
+      </profile>
+      <profile name="Annotation profile for certimaster-parent" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/unknown/lombok-unknown.jar" />
         </processorPath>
+        <module name="common-security" />
+        <module name="common-kafka" />
         <module name="common-redis" />
-      </profile>
-      <profile name="Maven default annotation processors profile" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <module name="exam-service" />
+        <module name="common-logging" />
+        <module name="common-core" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -31,8 +43,20 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="analytics-service" options="-parameters" />
+      <module name="api-gateway" options="-parameters" />
+      <module name="auth-service" options="-parameters" />
+      <module name="blog-service" options="-parameters" />
+      <module name="common-core" options="-parameters" />
+      <module name="common-exception" options="-parameters" />
+      <module name="common-kafka" options="-parameters" />
+      <module name="common-logging" options="-parameters" />
       <module name="common-redis" options="-parameters" />
+      <module name="common-security" options="-parameters" />
+      <module name="config-server" options="-parameters" />
+      <module name="eureka-server" options="-parameters" />
       <module name="exam-service" options="-parameters" />
+      <module name="result-service" options="-parameters" />
     </option>
   </component>
 </project>
