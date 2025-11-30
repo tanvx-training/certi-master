@@ -3,26 +3,14 @@
   <component name="CompilerConfiguration">
     <annotationProcessing>
       <profile default="true" name="Default" enabled="true" />
-      <profile name="Maven default annotation processors profile" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-      </profile>
-      <profile name="Annotation profile for certi-master" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/unknown/lombok-unknown.jar" />
-        </processorPath>
-        <module name="common-library" />
-      </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="analytics-service" target="21" />
       <module name="api-gateway" target="21" />
       <module name="blog-service" target="21" />
       <module name="com.certimaster.common-redis" target="21" />
+      <module name="com.certimaster.common-redis.main" target="21" />
+      <module name="com.certimaster.common-redis.test" target="21" />
       <module name="common-core" target="21" />
       <module name="common-exception" target="21" />
       <module name="common-kafka" target="21" />

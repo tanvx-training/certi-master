@@ -16,36 +16,32 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_roles")
+@Table(name = "email_verification_tokens")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserRole extends BaseEntity {
+public class EmailVerificationToken extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
+    @Column(nullable = false, unique = true, length = 500)
+    private String token;
 
-    @Column(name = "context_type", length = 50)
-    private String contextType;
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
 
-    @Column(name = "context_id")
-    private Long contextId;
+    @Column(name = "verified_at")
+    private LocalDateTime verifiedAt;
 
-    @Column(name = "valid_from")
-    @Builder.Default
-    private LocalDateTime validFrom = LocalDateTime.now();
+    public boolean isExpired() {
+        return LocalDateTime.now().isAfter(expiresAt);
+    }
 
-    @Column(name = "valid_until")
-    private LocalDateTime validUntil;
-
-    @Column(name = "is_primary")
-    @Builder.Default
-    private Boolean isPrimary = false;
+    public boolean isVerified() {
+        return verifiedAt != null;
+    }
 }

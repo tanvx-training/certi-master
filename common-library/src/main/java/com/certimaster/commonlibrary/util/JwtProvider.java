@@ -1,6 +1,7 @@
 package com.certimaster.commonlibrary.util;
 
 import com.certimaster.commonlibrary.dto.JwtProperties;
+import com.certimaster.commonlibrary.exception.jwt.InvalidTokenException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -141,25 +142,28 @@ public class JwtProvider {
     /**
      * Validate token
      */
-    public boolean validateToken(String token) {
+    public void validateToken(String token) {
         try {
             Jwts.parser()
                     .verifyWith(signingKey)
                     .build()
                     .parseSignedClaims(token);
-            return true;
         } catch (SignatureException ex) {
             log.error("Invalid JWT signature: {}", ex.getMessage());
+            throw new InvalidTokenException("TOKEN_INVALID", "Invalid JWT signature: " + ex.getMessage());
         } catch (MalformedJwtException ex) {
             log.error("Invalid JWT token: {}", ex.getMessage());
+            throw new InvalidTokenException("TOKEN_INVALID", "Invalid JWT token: " + ex.getMessage());
         } catch (ExpiredJwtException ex) {
             log.error("Expired JWT token: {}", ex.getMessage());
+            throw new InvalidTokenException("TOKEN_INVALID", "Expired JWT token: " + ex.getMessage());
         } catch (UnsupportedJwtException ex) {
             log.error("Unsupported JWT token: {}", ex.getMessage());
+            throw new InvalidTokenException("TOKEN_INVALID", "Unsupported JWT token: " + ex.getMessage());
         } catch (IllegalArgumentException ex) {
             log.error("JWT claims string is empty: {}", ex.getMessage());
+            throw new InvalidTokenException("TOKEN_INVALID", "JWT claims string is empty: " + ex.getMessage());
         }
-        return false;
     }
 
     /**

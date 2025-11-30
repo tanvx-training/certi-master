@@ -6,7 +6,7 @@ spring:
     name: auth-service
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:auth_db}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:certi-master}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -24,13 +24,10 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-        use_sql_comments: true
-
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:your-256-bit-secret-key-change-in-production-minimum-32-characters}
+  secret: ${JWT_SECRET:a8f2c1e9d4b7f6a3c0d9e8b7f4a1c2d3e6f9b0a7d8c3f1e2b5a7c9d4e8b2f6}
   expiration: 900000 # 15 minutes
   refresh-expiration: 604800000 # 7 days
 
@@ -41,9 +38,6 @@ logging:
     com.certimaster.authservice: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 # Actuator
 management:

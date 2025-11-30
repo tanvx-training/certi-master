@@ -9,7 +9,6 @@ import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Transient;
-import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
@@ -57,10 +56,6 @@ public abstract class BaseEntity implements Serializable {
     @Column(name = "updated_by", length = 50)
     private String updatedBy;
 
-    @Version
-    @Column(name = "version")
-    private Long version;
-
     /**
      * Check if entity is new (not persisted yet)
      */
@@ -73,9 +68,6 @@ public abstract class BaseEntity implements Serializable {
     protected void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
-        }
-        if (this.version == null) {
-            this.version = 0L;
         }
     }
 
@@ -103,7 +95,6 @@ public abstract class BaseEntity implements Serializable {
                 "id=" + id +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
-                ", version=" + version +
                 '}';
     }
 }

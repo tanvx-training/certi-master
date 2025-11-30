@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -489,7 +490,7 @@ public class GlobalExceptionHandler {
                 .success(false)
                 .errorCode("INVALID_CREDENTIALS")
                 .message("Invalid username or password")
-                .timestamp(java.time.LocalDateTime.now())
+                .timestamp(LocalDateTime.now())
                 .path(request.getRequestURI())
                 .method(request.getMethod())
                 .build();
