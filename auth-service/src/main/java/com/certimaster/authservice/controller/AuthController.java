@@ -4,6 +4,7 @@ import com.certimaster.authservice.dto.request.LoginRequest;
 import com.certimaster.authservice.dto.request.RefreshTokenRequest;
 import com.certimaster.authservice.dto.request.RegisterRequest;
 import com.certimaster.authservice.dto.response.LoginResponse;
+import com.certimaster.authservice.dto.response.RegisterResponse;
 import com.certimaster.authservice.dto.response.UserResponse;
 import com.certimaster.authservice.service.UserService;
 import com.certimaster.commonlibrary.dto.ResponseDto;
@@ -34,7 +35,7 @@ public class AuthController {
      * POST /api/v1/auth/register
      */
     @PostMapping("/register")
-    public ResponseEntity<ResponseDto<UserResponse>> register(@Valid @RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<ResponseDto<RegisterResponse>> register(@Valid @RequestBody RegisterRequest registerRequest) {
         log.info("Register request for username: {}", registerRequest.getUsername());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(userService.register(registerRequest));
@@ -48,6 +49,16 @@ public class AuthController {
     public ResponseEntity<ResponseDto<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
         log.info("Login request for username: {}", loginRequest.getUsername());
         return ResponseEntity.ok(userService.login(loginRequest));
+    }
+
+    /**
+     * Get current user
+     * POST /api/v1/auth/current
+     */
+    @GetMapping("/current")
+    public ResponseEntity<ResponseDto<UserResponse>> getCurrentUser(@RequestHeader("Authorization") String authorization) {
+        log.info("Get current user request received");
+        return ResponseEntity.ok(userService.getCurrent(authorization));
     }
 
     /**

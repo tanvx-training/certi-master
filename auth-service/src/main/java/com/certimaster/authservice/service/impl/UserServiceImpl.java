@@ -1,12 +1,13 @@
 package com.certimaster.authservice.service.impl;
 
+import com.certimaster.authservice.dto.response.UserResponse;
 import com.certimaster.commonlibrary.dto.JwtProperties;
 import com.certimaster.authservice.dto.request.LoginRequest;
 import com.certimaster.authservice.dto.request.RefreshTokenRequest;
 import com.certimaster.authservice.dto.request.RegisterRequest;
 import com.certimaster.authservice.dto.response.LoginResponse;
 import com.certimaster.authservice.dto.response.PermissionResponse;
-import com.certimaster.authservice.dto.response.UserResponse;
+import com.certimaster.authservice.dto.response.RegisterResponse;
 import com.certimaster.authservice.entity.RefreshToken;
 import com.certimaster.authservice.entity.Role;
 import com.certimaster.authservice.entity.User;
@@ -53,7 +54,7 @@ public class UserServiceImpl implements UserService {
     private final CustomUserDetailsService customUserDetailsService;
 
     @Override
-    public ResponseDto<UserResponse> register(RegisterRequest registerRequest) {
+    public ResponseDto<RegisterResponse> register(RegisterRequest registerRequest) {
 
         log.info("Starting registration process for username: {}", registerRequest.getUsername());
         // Business logic:
@@ -119,11 +120,13 @@ public class UserServiceImpl implements UserService {
         }
         // 3. Generate JWT access token (15 min)
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(loginRequest.getUsername());
+        log.info("Processing login for user: {}", userDetails.getUsername());
         Map<String, Object> claims = new HashMap<>();
         String roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
+        claims.put("userId", user.getId());
         claims.put("roles", roles);
         claims.put("email", userDetails.getUsername());
         String accessToken = jwtProvider.generateToken(userDetails.getUsername(), claims);
@@ -147,10 +150,12 @@ public class UserServiceImpl implements UserService {
         User user = refreshTokenService.validateRefreshToken(request.getRefreshToken());
         // 2. Generate new access token
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(user.getUsername());
+        log.info("Processing refresh token for user: {}", userDetails.getUsername());
         Map<String, Object> claims = new HashMap<>();
         String roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
+        claims.put("userId", user.getId());
         claims.put("roles", roles);
         claims.put("email", userDetails.getUsername());
         String accessToken = jwtProvider.generateToken(userDetails.getUsername(), claims);
@@ -180,11 +185,22 @@ public class UserServiceImpl implements UserService {
         return ResponseDto.success("Verify email successful", null);
     }
 
-    private UserResponse mapToUserResponse(User user) {
+    @Override
+    public ResponseDto<UserResponse> getCurrent(String authorization) {
+        log.info("Starting get current process for get current user");
+        String token = authorization.substring("Bearer ".length());
+        Long userId = jwtProvider.getUserIdFromToken(token);
+        User user = userRepository.findById(userId)
+                .orElseThrow(UnauthorizedException::invalidCredentials);
+        PermissionResponse permissions = permissionService.loadUserPermissions(userId);
+        return ResponseDto.success("Get current user successful", buildUserResponse(user, permissions));
+    }
+
+    private RegisterResponse mapToUserResponse(User user) {
         log.debug("Mapping user to UserResponse: {}", user.getId());
         
-        List<UserResponse.RoleInfo> roles = user.getUserRoles().stream()
-                .map(userRole -> UserResponse.RoleInfo.builder()
+        List<RegisterResponse.RoleInfo> roles = user.getUserRoles().stream()
+                .map(userRole -> RegisterResponse.RoleInfo.builder()
                         .id(userRole.getRole().getId())
                         .code(userRole.getRole().getCode())
                         .name(userRole.getRole().getName())
@@ -192,7 +208,7 @@ public class UserServiceImpl implements UserService {
                         .build())
                 .collect(Collectors.toList());
 
-        return UserResponse.builder()
+        return RegisterResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .username(user.getUsername())
@@ -236,6 +252,31 @@ public class UserServiceImpl implements UserService {
         return LoginResponse.builder()
                 .user(userInfo)
                 .tokens(tokenInfo)
+                .permissions(permissions)
+                .build();
+    }
+
+    private UserResponse buildUserResponse(User user, PermissionResponse permissions) {
+        UserResponse.UserInfo userInfo = UserResponse.UserInfo.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
+                .username(user.getUsername())
+                .status(user.getStatus())
+                .phone(user.getPhone())
+                .emailVerified(user.getEmailVerified())
+                .roles(user.getUserRoles().stream()
+                        .map(ur -> UserResponse.RoleInfo.builder()
+                                .id(ur.getRole().getId())
+                                .code(ur.getRole().getCode())
+                                .name(ur.getRole().getName())
+                                .isPrimary(ur.getIsPrimary())
+                                .build())
+                        .collect(Collectors.toList()))
+                .build();
+        return UserResponse.builder()
+                .user(userInfo)
                 .permissions(permissions)
                 .build();
     }
