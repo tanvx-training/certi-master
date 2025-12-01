@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -13,27 +14,17 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserResponse {
-
-    private UserInfo user;
-    private PermissionResponse permissions;
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class UserInfo {
-        private Long id;
-        private String email;
-        private String username;
-        private String fullName;
-        private String avatarUrl;
-        private String phone;
-        private String status;
-        private Boolean emailVerified;
-        private List<RoleInfo> roles;
-    }
+public class RegisterResponse {
+    private Long id;
+    private String email;
+    private String username;
+    private String fullName;
+    private String avatarUrl;
+    private String phone;
+    private String status;
+    private Boolean emailVerified;
+    private List<RoleInfo> roles;
+    private LocalDateTime createdAt;
 
     @Getter
     @Setter
