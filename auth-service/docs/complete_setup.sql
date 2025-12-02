@@ -49,8 +49,8 @@ CREATE TABLE users (
     email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    updated_by BIGINT
+    created_by VARCHAR(50) NOT NULL,
+    updatedBy VARCHAR(50)
 );
 
 COMMENT ON TABLE users IS 'Stores user identity and authentication information';
@@ -75,8 +75,8 @@ CREATE TABLE refresh_tokens (
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    updated_by BIGINT
+    created_by VARCHAR(50) NOT NULL,
+    updatedBy VARCHAR(50)
 );
 
 COMMENT ON TABLE refresh_tokens IS 'Manages JWT refresh tokens for user authentication';
@@ -98,8 +98,8 @@ CREATE TABLE roles (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    updated_by BIGINT
+    created_by VARCHAR(50) NOT NULL,
+    updatedBy VARCHAR(50)
 );
 
 COMMENT ON TABLE roles IS 'Defines system roles for RBAC';
@@ -125,8 +125,8 @@ CREATE TABLE user_roles (
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    updated_by BIGINT
+    created_by VARCHAR(50) NOT NULL,
+    updatedBy VARCHAR(50)
 );
 
 COMMENT ON TABLE user_roles IS 'Assigns roles to users with context and temporal constraints';
@@ -154,8 +154,8 @@ CREATE TABLE modules (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    updated_by BIGINT
+    created_by VARCHAR(50) NOT NULL,
+    updatedBy VARCHAR(50)
 );
 
 COMMENT ON TABLE modules IS 'Top-level grouping of related features (e.g., User Management, Course Management)';
@@ -185,8 +185,8 @@ CREATE TABLE features (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    updated_by BIGINT
+    created_by VARCHAR(50) NOT NULL,
+    updatedBy VARCHAR(50)
 );
 
 COMMENT ON TABLE features IS 'Specific features within modules, supports hierarchical structure';
@@ -214,8 +214,8 @@ CREATE TABLE actions (
     is_system BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    updated_by BIGINT
+    created_by VARCHAR(50) NOT NULL,
+    updatedBy VARCHAR(50)
 );
 
 COMMENT ON TABLE actions IS 'Defines available actions that can be performed on resources';
@@ -246,8 +246,8 @@ CREATE TABLE resources (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    updated_by BIGINT
+    created_by VARCHAR(50) NOT NULL,
+    updatedBy VARCHAR(50)
 );
 
 COMMENT ON TABLE resources IS 'Specific resources that can be permission-controlled (API, UI components, etc.)';
@@ -279,8 +279,8 @@ CREATE TABLE data_scopes (
     filter_expression TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    updated_by BIGINT
+    created_by VARCHAR(50) NOT NULL,
+    updatedBy VARCHAR(50)
 );
 
 COMMENT ON TABLE data_scopes IS 'Defines hierarchical data access scopes';
@@ -308,8 +308,8 @@ CREATE TABLE role_permissions (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    updated_by BIGINT
+    created_by VARCHAR(50) NOT NULL,
+    updatedBy VARCHAR(50)
 );
 
 COMMENT ON TABLE role_permissions IS 'Assigns resource permissions to roles with data scope constraints';
@@ -341,8 +341,8 @@ CREATE TABLE user_permissions (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    updated_by BIGINT
+    created_by VARCHAR(50) NOT NULL,
+    updatedBy VARCHAR(50)
 );
 
 COMMENT ON TABLE user_permissions IS 'User-specific permission overrides that take precedence over role permissions';
