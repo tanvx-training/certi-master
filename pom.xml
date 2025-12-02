@@ -18,6 +18,7 @@
         <module>common-library</module>
         <!-- Microservices -->
         <module>auth-service</module>
+        <module>exam-service</module>
         <!-- Infrastructure -->
     </modules>
 
