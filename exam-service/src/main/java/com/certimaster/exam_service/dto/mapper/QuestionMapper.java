@@ -1,6 +1,7 @@
 package com.certimaster.exam_service.dto.mapper;
 
 import com.certimaster.exam_service.dto.request.QuestionRequest;
+import com.certimaster.exam_service.dto.request.QuestionWithOptionsRequest;
 import com.certimaster.exam_service.dto.response.QuestionOptionResponse;
 import com.certimaster.exam_service.dto.response.QuestionResponse;
 import com.certimaster.exam_service.entity.Question;
@@ -69,6 +70,17 @@ public interface QuestionMapper {
     Question toEntity(QuestionRequest request);
 
     /**
+     * Converts a QuestionWithOptionsRequest DTO to a Question entity.
+     *
+     * @param request the question with options request DTO
+     * @return the question entity
+     */
+    @Mapping(target = "topic", ignore = true)
+    @Mapping(target = "questionOptions", ignore = true)
+    @Mapping(target = "examQuestions", ignore = true)
+    Question toEntity(QuestionWithOptionsRequest request);
+
+    /**
      * Updates an existing Question entity with data from a QuestionRequest DTO.
      * Ignores null values in the request to allow partial updates.
      *
@@ -79,6 +91,17 @@ public interface QuestionMapper {
     @Mapping(target = "questionOptions", ignore = true)
     @Mapping(target = "examQuestions", ignore = true)
     void updateEntity(@MappingTarget Question question, QuestionRequest request);
+
+    /**
+     * Updates an existing Question entity with data from a QuestionWithOptionsRequest DTO.
+     *
+     * @param question the target question entity to update
+     * @param request the question with options request DTO with updated data
+     */
+    @Mapping(target = "topic", ignore = true)
+    @Mapping(target = "questionOptions", ignore = true)
+    @Mapping(target = "examQuestions", ignore = true)
+    void updateEntity(@MappingTarget Question question, QuestionWithOptionsRequest request);
 
     /**
      * Maps question options with isCorrect field included.

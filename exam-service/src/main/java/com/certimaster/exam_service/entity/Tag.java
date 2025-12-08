@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "questions")
+@Table(name = "tags")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,6 +19,9 @@ import lombok.Setter;
 @Builder
 public class Tag extends BaseEntity {
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", nullable = false, unique = true, length = 100)
     private String name;
+
+    @Column(name = "status", length = 20)
+    private String status;
 }
