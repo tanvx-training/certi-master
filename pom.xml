@@ -19,6 +19,8 @@
         <!-- Microservices -->
         <module>auth-service</module>
         <module>exam-service</module>
+        <module>result-service</module>
+        <module>blog-service</module>
         <!-- Infrastructure -->
     </modules>
 

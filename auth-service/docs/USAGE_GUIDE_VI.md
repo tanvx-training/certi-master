@@ -1245,43 +1245,44 @@ VALUES (3, (SELECT id FROM roles WHERE code = 'STUDENT'), 'COURSE', 102, false, 
 #### 4.1.1 Custom Permission Evaluator
 
 ```java
-package com.certimaster.authservice.security;
+package com.certimaster.auth_service.security;
 
 import org.springframework.security.access.PermissionEvaluator;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+
 import java.io.Serializable;
 
 @Component
 public class CustomPermissionEvaluator implements PermissionEvaluator {
-    
+
     @Autowired
     private PermissionService permissionService;
-    
+
     @Override
     public boolean hasPermission(Authentication authentication, Object targetDomainObject, Object permission) {
         if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
             return false;
         }
-        
+
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getUserId();
         String resourceCode = permission.toString();
-        
+
         // Get context from request (if available)
         String contextType = RequestContextHolder.getContextType();
         Long contextId = RequestContextHolder.getContextId();
-        
+
         PermissionResult result = permissionService.hasPermission(
-            userId, resourceCode, contextType, contextId
+                userId, resourceCode, contextType, contextId
         );
-        
+
         return result.isGranted();
     }
-    
+
     @Override
-    public boolean hasPermission(Authentication authentication, Serializable targetId, 
-                                String targetType, Object permission) {
+    public boolean hasPermission(Authentication authentication, Serializable targetId,
+                                 String targetType, Object permission) {
         // Implementation for checking permission on specific entity
         return hasPermission(authentication, null, permission);
     }
@@ -1291,7 +1292,7 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
 #### 4.1.2 Security Configuration
 
 ```java
-package com.certimaster.authservice.config;
+package com.certimaster.auth_service.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
@@ -1302,14 +1303,14 @@ import org.springframework.security.config.annotation.method.configuration.Globa
 @Configuration
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
-    
+
     @Autowired
     private CustomPermissionEvaluator permissionEvaluator;
-    
+
     @Override
     protected MethodSecurityExpressionHandler createExpressionHandler() {
-        DefaultMethodSecurityExpressionHandler expressionHandler = 
-            new DefaultMethodSecurityExpressionHandler();
+        DefaultMethodSecurityExpressionHandler expressionHandler =
+                new DefaultMethodSecurityExpressionHandler();
         expressionHandler.setPermissionEvaluator(permissionEvaluator);
         return expressionHandler;
     }
@@ -1321,7 +1322,7 @@ public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
 #### 4.2.1 Using @PreAuthorize Annotation
 
 ```java
-package com.certimaster.authservice.controller;
+package com.certimaster.auth_service.controller;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -1329,10 +1330,10 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/exams")
 public class ExamController {
-    
+
     @Autowired
     private ExamService examService;
-    
+
     /**
      * Lấy danh sách kỳ thi - Cần quyền READ
      */
@@ -1341,12 +1342,12 @@ public class ExamController {
     public ResponseEntity<List<ExamDto>> getExams(
             @RequestParam(required = false) Long organizationId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        
+
         // Permission đã được check bởi @PreAuthorize
         List<ExamDto> exams = examService.getExams(organizationId, userDetails.getUserId());
         return ResponseEntity.ok(exams);
     }
-    
+
     /**
      * Tạo kỳ thi mới - Cần quyền CREATE
      */
@@ -1355,11 +1356,11 @@ public class ExamController {
     public ResponseEntity<ExamDto> createExam(
             @RequestBody CreateExamRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        
+
         ExamDto exam = examService.createExam(request, userDetails.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(exam);
     }
-    
+
     /**
      * Cập nhật kỳ thi - Cần quyền UPDATE
      */
@@ -1369,11 +1370,11 @@ public class ExamController {
             @PathVariable Long id,
             @RequestBody UpdateExamRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        
+
         ExamDto exam = examService.updateExam(id, request, userDetails.getUserId());
         return ResponseEntity.ok(exam);
     }
-    
+
     /**
      * Xóa kỳ thi - Cần quyền DELETE (requires approval)
      */
@@ -1382,7 +1383,7 @@ public class ExamController {
     public ResponseEntity<Void> deleteExam(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        
+
         examService.deleteExam(id, userDetails.getUserId());
         return ResponseEntity.noContent().build();
     }
@@ -1470,101 +1471,102 @@ public class ExamController {
 #### 4.3.1 Apply Data Scope Filter
 
 ```java
-package com.certimaster.authservice.service;
+package com.certimaster.auth_service.service;
 
 import org.springframework.stereotype.Service;
+
 import javax.persistence.criteria.*;
 import java.util.List;
 
 @Service
 public class ExamService {
-    
+
     @Autowired
     private ExamRepository examRepository;
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     /**
      * Lấy danh sách kỳ thi với data scope filtering
      */
     public List<ExamDto> getExamsWithScope(Long organizationId, Long userId, DataScope dataScope) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         // Build query với data scope filter
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Exam> query = cb.createQuery(Exam.class);
         Root<Exam> exam = query.from(Exam.class);
-        
+
         // Base condition: organization
         Predicate predicate = cb.equal(exam.get("organizationId"), organizationId);
-        
+
         // Apply data scope filter
         switch (dataScope.getCode()) {
             case "OWN":
                 // Chỉ kỳ thi do user tạo
                 predicate = cb.and(predicate, cb.equal(exam.get("createdBy"), userId));
                 break;
-                
+
             case "TEAM":
                 // Kỳ thi của team
                 List<Long> teamIds = user.getTeamIds();
                 predicate = cb.and(predicate, exam.get("teamId").in(teamIds));
                 break;
-                
+
             case "DEPARTMENT":
                 // Kỳ thi của phòng ban
                 predicate = cb.and(predicate, cb.equal(exam.get("departmentId"), user.getDepartmentId()));
                 break;
-                
+
             case "ORGANIZATION":
                 // Tất cả kỳ thi trong organization (không thêm filter)
                 break;
-                
+
             case "ALL":
                 // Tất cả kỳ thi (bỏ cả organization filter)
                 predicate = cb.conjunction();
                 break;
-                
+
             default:
                 throw new IllegalArgumentException("Unknown data scope: " + dataScope.getCode());
         }
-        
+
         query.where(predicate);
         List<Exam> exams = entityManager.createQuery(query).getResultList();
-        
+
         return exams.stream()
-            .map(this::toDto)
-            .collect(Collectors.toList());
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
-    
+
     /**
      * Kiểm tra user có quyền truy cập exam cụ thể không
      */
     public boolean canAccessExam(Long examId, Long userId, DataScope dataScope) {
         Exam exam = examRepository.findById(examId)
-            .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
+
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         switch (dataScope.getCode()) {
             case "OWN":
                 return exam.getCreatedBy().equals(userId);
-                
+
             case "TEAM":
                 return user.getTeamIds().contains(exam.getTeamId());
-                
+
             case "DEPARTMENT":
                 return exam.getDepartmentId().equals(user.getDepartmentId());
-                
+
             case "ORGANIZATION":
                 return exam.getOrganizationId().equals(user.getOrganizationId());
-                
+
             case "ALL":
                 return true;
-                
+
             default:
                 return false;
         }
@@ -1575,41 +1577,42 @@ public class ExamService {
 #### 4.3.2 Repository với Data Scope
 
 ```java
-package com.certimaster.authservice.repository;
+package com.certimaster.auth_service.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 
 public interface ExamRepository extends JpaRepository<Exam, Long> {
-    
+
     // OWN scope: Chỉ của user
     List<Exam> findByCreatedBy(Long userId);
-    
+
     // TEAM scope: Của team
     @Query("SELECT e FROM Exam e WHERE e.teamId IN :teamIds")
     List<Exam> findByTeamIds(@Param("teamIds") List<Long> teamIds);
-    
+
     // DEPARTMENT scope: Của phòng ban
     List<Exam> findByDepartmentId(Long departmentId);
-    
+
     // ORGANIZATION scope: Của tổ chức
     List<Exam> findByOrganizationId(Long organizationId);
-    
+
     // Dynamic scope query
     @Query("SELECT e FROM Exam e WHERE " +
-           "(:scope = 'OWN' AND e.createdBy = :userId) OR " +
-           "(:scope = 'TEAM' AND e.teamId IN :teamIds) OR " +
-           "(:scope = 'DEPARTMENT' AND e.departmentId = :departmentId) OR " +
-           "(:scope = 'ORGANIZATION' AND e.organizationId = :organizationId) OR " +
-           "(:scope = 'ALL')")
+            "(:scope = 'OWN' AND e.createdBy = :userId) OR " +
+            "(:scope = 'TEAM' AND e.teamId IN :teamIds) OR " +
+            "(:scope = 'DEPARTMENT' AND e.departmentId = :departmentId) OR " +
+            "(:scope = 'ORGANIZATION' AND e.organizationId = :organizationId) OR " +
+            "(:scope = 'ALL')")
     List<Exam> findByScope(
-        @Param("scope") String scope,
-        @Param("userId") Long userId,
-        @Param("teamIds") List<Long> teamIds,
-        @Param("departmentId") Long departmentId,
-        @Param("organizationId") Long organizationId
+            @Param("scope") String scope,
+            @Param("userId") Long userId,
+            @Param("teamIds") List<Long> teamIds,
+            @Param("departmentId") Long departmentId,
+            @Param("organizationId") Long organizationId
     );
 }
 ```
@@ -1620,7 +1623,7 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
 #### 4.4.1 Custom Annotation
 
 ```java
-package com.certimaster.authservice.security.annotation;
+package com.certimaster.auth_service.security.annotation;
 
 import java.lang.annotation.*;
 
@@ -1632,17 +1635,17 @@ public @interface RequirePermission {
      * Resource code cần kiểm tra
      */
     String value();
-    
+
     /**
      * Context type (optional)
      */
     String contextType() default "";
-    
+
     /**
      * Tên parameter chứa context ID (optional)
      */
     String contextIdParam() default "";
-    
+
     /**
      * Message khi không có quyền
      */
@@ -1653,7 +1656,7 @@ public @interface RequirePermission {
 #### 4.4.2 Permission Aspect
 
 ```java
-package com.certimaster.authservice.security.aspect;
+package com.certimaster.auth_service.security.aspect;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -1666,36 +1669,36 @@ import org.springframework.stereotype.Component;
 @Aspect
 @Component
 public class PermissionAspect {
-    
+
     @Autowired
     private PermissionService permissionService;
-    
+
     @Around("@annotation(requirePermission)")
-    public Object checkPermission(ProceedingJoinPoint joinPoint, RequirePermission requirePermission) 
+    public Object checkPermission(ProceedingJoinPoint joinPoint, RequirePermission requirePermission)
             throws Throwable {
-        
+
         // Get current user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
             throw new UnauthorizedException("User not authenticated");
         }
-        
+
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getUserId();
-        
+
         // Get resource code
         String resourceCode = requirePermission.value();
-        
+
         // Get context (if specified)
         String contextType = requirePermission.contextType();
         Long contextId = null;
-        
+
         if (!contextType.isEmpty() && !requirePermission.contextIdParam().isEmpty()) {
             // Extract context ID from method parameters
             MethodSignature signature = (MethodSignature) joinPoint.getSignature();
             String[] paramNames = signature.getParameterNames();
             Object[] paramValues = joinPoint.getArgs();
-            
+
             for (int i = 0; i < paramNames.length; i++) {
                 if (paramNames[i].equals(requirePermission.contextIdParam())) {
                     contextId = (Long) paramValues[i];
@@ -1703,19 +1706,19 @@ public class PermissionAspect {
                 }
             }
         }
-        
+
         // Check permission
         PermissionResult permission = permissionService.hasPermission(
-            userId, resourceCode, contextType.isEmpty() ? null : contextType, contextId
+                userId, resourceCode, contextType.isEmpty() ? null : contextType, contextId
         );
-        
+
         if (!permission.isGranted()) {
             throw new ForbiddenException(requirePermission.message());
         }
-        
+
         // Store data scope in thread local for later use
         DataScopeContext.setDataScope(permission.getDataScope());
-        
+
         try {
             return joinPoint.proceed();
         } finally {
@@ -1786,35 +1789,35 @@ public class ExamController {
 #### 4.5.1 Permission Exception Classes
 
 ```java
-package com.certimaster.authservice.exception;
+package com.certimaster.auth_service.exception;
 
 public class ForbiddenException extends RuntimeException {
     private String resourceCode;
     private String reason;
-    
+
     public ForbiddenException(String message) {
         super(message);
     }
-    
+
     public ForbiddenException(String message, String resourceCode, String reason) {
         super(message);
         this.resourceCode = resourceCode;
         this.reason = reason;
     }
-    
+
     // Getters
 }
 
 public class InsufficientDataScopeException extends ForbiddenException {
     private String requiredScope;
     private String userScope;
-    
+
     public InsufficientDataScopeException(String message, String requiredScope, String userScope) {
         super(message);
         this.requiredScope = requiredScope;
         this.userScope = userScope;
     }
-    
+
     // Getters
 }
 ```
@@ -1822,7 +1825,7 @@ public class InsufficientDataScopeException extends ForbiddenException {
 #### 4.5.2 Global Exception Handler
 
 ```java
-package com.certimaster.authservice.exception.handler;
+package com.certimaster.auth_service.exception.handler;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -1831,36 +1834,36 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class PermissionExceptionHandler {
-    
+
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException ex) {
         ErrorResponse error = ErrorResponse.builder()
-            .status(HttpStatus.FORBIDDEN.value())
-            .error("Forbidden")
-            .message(ex.getMessage())
-            .resourceCode(ex.getResourceCode())
-            .reason(ex.getReason())
-            .timestamp(LocalDateTime.now())
-            .build();
-        
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("Forbidden")
+                .message(ex.getMessage())
+                .resourceCode(ex.getResourceCode())
+                .reason(ex.getReason())
+                .timestamp(LocalDateTime.now())
+                .build();
+
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
-    
+
     @ExceptionHandler(InsufficientDataScopeException.class)
     public ResponseEntity<ErrorResponse> handleInsufficientDataScopeException(
             InsufficientDataScopeException ex) {
-        
+
         ErrorResponse error = ErrorResponse.builder()
-            .status(HttpStatus.FORBIDDEN.value())
-            .error("Insufficient Data Scope")
-            .message(ex.getMessage())
-            .details(Map.of(
-                "requiredScope", ex.getRequiredScope(),
-                "userScope", ex.getUserScope()
-            ))
-            .timestamp(LocalDateTime.now())
-            .build();
-        
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("Insufficient Data Scope")
+                .message(ex.getMessage())
+                .details(Map.of(
+                        "requiredScope", ex.getRequiredScope(),
+                        "userScope", ex.getUserScope()
+                ))
+                .timestamp(LocalDateTime.now())
+                .build();
+
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 }
@@ -1872,19 +1875,19 @@ public class PermissionExceptionHandler {
 #### 4.6.1 DataScopeContext (ThreadLocal)
 
 ```java
-package com.certimaster.authservice.util;
+package com.certimaster.auth_service.util;
 
 public class DataScopeContext {
     private static final ThreadLocal<DataScope> dataScopeHolder = new ThreadLocal<>();
-    
+
     public static void setDataScope(DataScope dataScope) {
         dataScopeHolder.set(dataScope);
     }
-    
+
     public static DataScope getDataScope() {
         return dataScopeHolder.get();
     }
-    
+
     public static void clear() {
         dataScopeHolder.remove();
     }
@@ -1894,25 +1897,25 @@ public class DataScopeContext {
 #### 4.6.2 RequestContextHolder
 
 ```java
-package com.certimaster.authservice.util;
+package com.certimaster.auth_service.util;
 
 public class RequestContextHolder {
     private static final ThreadLocal<String> contextTypeHolder = new ThreadLocal<>();
     private static final ThreadLocal<Long> contextIdHolder = new ThreadLocal<>();
-    
+
     public static void setContext(String contextType, Long contextId) {
         contextTypeHolder.set(contextType);
         contextIdHolder.set(contextId);
     }
-    
+
     public static String getContextType() {
         return contextTypeHolder.get();
     }
-    
+
     public static Long getContextId() {
         return contextIdHolder.get();
     }
-    
+
     public static void clear() {
         contextTypeHolder.remove();
         contextIdHolder.remove();
@@ -1923,33 +1926,34 @@ public class RequestContextHolder {
 #### 4.6.3 Context Interceptor
 
 ```java
-package com.certimaster.authservice.interceptor;
+package com.certimaster.auth_service.interceptor;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 @Component
 public class ContextInterceptor implements HandlerInterceptor {
-    
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         // Extract context from headers
         String contextType = request.getHeader("X-Context-Type");
         String contextIdStr = request.getHeader("X-Context-Id");
-        
+
         if (contextType != null && contextIdStr != null) {
             Long contextId = Long.parseLong(contextIdStr);
             RequestContextHolder.setContext(contextType, contextId);
         }
-        
+
         return true;
     }
-    
+
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, 
-                               Object handler, Exception ex) {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
+                                Object handler, Exception ex) {
         // Clean up thread local
         RequestContextHolder.clear();
         DataScopeContext.clear();

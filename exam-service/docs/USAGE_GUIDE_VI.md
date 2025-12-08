@@ -921,7 +921,7 @@ public class QuestionStatistics {
 
 public interface QuestionRepository extends JpaRepository<Question, Long> {
     
-    @Query("SELECT new com.certimaster.examservice.dto.QuestionStatistics(" +
+    @Query("SELECT new com.certimaster.exam_service.dto.QuestionStatistics(" +
            "  q.difficulty, COUNT(q), AVG(q.points)) " +
            "FROM Question q " +
            "WHERE q.topic.certification.id = :certificationId " +

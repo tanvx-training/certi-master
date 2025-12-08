@@ -48,3 +48,15 @@ management:
   endpoint:
     health:
       show-details: always
+
+# Exam Session Configuration
+exam:
+  session:
+    max-concurrent: 1000
+    expiration-check-interval: 60000 # 1 minute in milliseconds
+    grace-period: 300000 # 5 minutes in milliseconds
+  generation:
+    difficulty-distribution:
+      easy: 30
+      medium: 50
+      hard: 20
