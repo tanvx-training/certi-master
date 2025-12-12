@@ -1,27 +1,24 @@
 package com.certimaster.exam_service.dto.response;
 
+import com.certimaster.common_library.dto.BaseDto;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
  * Response DTO for an active exam session.
- * Contains all information about the current state of an exam session.
  */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExamSessionResponse {
-
-    /**
-     * Unique identifier for the exam session.
-     */
-    private String sessionId;
+@EqualsAndHashCode(callSuper = true)
+public class ExamSessionResponse extends BaseDto {
 
     /**
      * ID of the exam being taken.
@@ -34,7 +31,17 @@ public class ExamSessionResponse {
     private String examTitle;
 
     /**
-     * Mode of the exam session (PRACTICE, TIMED).
+     * Certification ID.
+     */
+    private Long certificationId;
+
+    /**
+     * Certification name.
+     */
+    private String certificationName;
+
+    /**
+     * Mode of the exam session (PRACTICE, EXAM).
      */
     private String mode;
 
@@ -49,14 +56,19 @@ public class ExamSessionResponse {
     private LocalDateTime startTime;
 
     /**
-     * Duration of the exam in minutes.
+     * End time of the exam session.
      */
-    private Integer duration;
+    private LocalDateTime endTime;
 
     /**
-     * Time remaining in minutes.
+     * Duration of the exam in minutes.
      */
-    private Integer timeRemaining;
+    private Integer durationMinutes;
+
+    /**
+     * Passing score percentage.
+     */
+    private Integer passingScore;
 
     /**
      * Total number of questions in the exam.
@@ -69,18 +81,7 @@ public class ExamSessionResponse {
     private Integer currentQuestionIndex;
 
     /**
-     * Number of questions answered.
-     */
-    private Integer answeredCount;
-
-    /**
-     * Number of questions flagged for review.
-     */
-    private Integer flaggedCount;
-
-    /**
-     * List of questions in the exam session.
-     * Note: QuestionResponse will be created in Task 5.
+     * List of questions in the exam session (without correct answers).
      */
     private List<QuestionResponse> questions;
 }

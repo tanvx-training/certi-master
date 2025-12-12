@@ -1,0 +1,80 @@
+package com.certimaster.resultservice.entity;
+
+import com.certimaster.common_library.entity.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
+/**
+ * Entity representing a user's exam session.
+ */
+@Entity
+@Table(name = "user_exam_sessions")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class UserExamSession extends BaseEntity {
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(name = "exam_id", nullable = false)
+    private Long examId;
+
+    @Column(name = "certification_id")
+    private Long certificationId;
+
+    @Column(name = "start_time", nullable = false)
+    private LocalDateTime startTime;
+
+    @Column(name = "end_time")
+    private LocalDateTime endTime;
+
+    @Column(name = "status", length = 20)
+    @Builder.Default
+    private String status = "IN_PROGRESS";
+
+    @Column(name = "mode", length = 20, nullable = false)
+    private String mode;
+
+    @Column(name = "exam_title", length = 500)
+    private String examTitle;
+
+    @Column(name = "total_questions", nullable = false)
+    private Integer totalQuestions;
+
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
+
+    @Column(name = "answered_count")
+    @Builder.Default
+    private Integer answeredCount = 0;
+
+    @Column(name = "correct_count")
+    @Builder.Default
+    private Integer correctCount = 0;
+
+    @Column(name = "wrong_count")
+    @Builder.Default
+    private Integer wrongCount = 0;
+
+    @Column(name = "unanswered_count")
+    private Integer unansweredCount;
+
+    @Column(name = "flagged_count")
+    @Builder.Default
+    private Integer flaggedCount = 0;
+
+    @Column(name = "time_spent_seconds")
+    @Builder.Default
+    private Integer timeSpentSeconds = 0;
+}

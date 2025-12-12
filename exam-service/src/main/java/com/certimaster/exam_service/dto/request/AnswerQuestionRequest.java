@@ -26,7 +26,10 @@ public class AnswerQuestionRequest {
     private List<Long> selectedOptionIds;
 
     @Min(value = 0, message = "Time spent must be non-negative")
-    private Integer timeSpent;
+    private Integer timeSpentSeconds;
 
-    private Boolean isConfident;
+    /**
+     * Whether the question is flagged for review.
+     */
+    private Boolean isFlagged;
 }
