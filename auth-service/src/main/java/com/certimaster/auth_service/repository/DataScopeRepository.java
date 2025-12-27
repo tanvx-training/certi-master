@@ -1,9 +1,0 @@
-package com.certimaster.auth_service.repository;
-
-import com.certimaster.auth_service.entity.DataScope;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-@Repository
-public interface DataScopeRepository extends JpaRepository<DataScope, Long> {
-}

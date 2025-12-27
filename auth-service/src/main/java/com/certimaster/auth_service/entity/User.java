@@ -1,17 +1,19 @@
 package com.certimaster.auth_service.entity;
 
 import com.certimaster.common_library.entity.BaseEntity;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,7 +24,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true, length = 300)
@@ -51,22 +53,33 @@ public class User extends BaseEntity {
     @Builder.Default
     private Boolean emailVerified = false;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
     @Builder.Default
-    private Set<UserRole> userRoles = new HashSet<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    private Set<UserPermission> userPermissions = new HashSet<>();
+    private Set<Role> roles = new HashSet<>();
 
     // Helper methods
-    public void addUserRole(UserRole userRole) {
-        userRoles.add(userRole);
-        userRole.setUser(this);
+    public void addRole(Role role) {
+        roles.add(role);
     }
 
-    public void removeUserRole(UserRole userRole) {
-        userRoles.remove(userRole);
-        userRole.setUser(null);
+    public void removeRole(Role role) {
+        roles.remove(role);
+    }
+
+    public boolean hasRole(String roleCode) {
+        return roles.stream().anyMatch(role -> role.getCode().equals(roleCode));
+    }
+
+    public Set<String> getAllPermissions() {
+        Set<String> permissions = new HashSet<>();
+        for (Role role : roles) {
+            permissions.addAll(role.getPermissions());
+        }
+        return permissions;
     }
 }

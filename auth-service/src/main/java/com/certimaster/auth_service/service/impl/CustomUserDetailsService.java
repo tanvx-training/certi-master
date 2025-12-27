@@ -15,6 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+/**
+ * Custom UserDetailsService implementation for Spring Security
+ * Uses the simplified entity structure (User -> Role via ManyToMany)
+ */
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
@@ -37,11 +41,13 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .build();
     }
 
-
+    /**
+     * Get authorities from user's roles using simplified ManyToMany relationship
+     */
     private Collection<? extends GrantedAuthority> getAuthorities(User user) {
-        return user.getUserRoles()
+        return user.getRoles()
                 .stream()
-                .map(ur -> new SimpleGrantedAuthority(ur.getRole().getCode()))
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getCode()))
                 .collect(Collectors.toSet());
     }
 }

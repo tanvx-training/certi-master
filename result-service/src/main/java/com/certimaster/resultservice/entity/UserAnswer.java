@@ -3,20 +3,19 @@ package com.certimaster.resultservice.entity;
 import com.certimaster.common_library.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * Entity representing a user's answer to a question.
@@ -27,11 +26,12 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class UserAnswer extends BaseEntity {
 
-    @Column(name = "session_id", nullable = false)
-    private Long sessionId;
+    @ManyToOne
+    @JoinColumn(name = "session_id", nullable = false)
+    private UserExamSession userExamSession;
 
     @Column(name = "question_id", nullable = false)
     private Long questionId;

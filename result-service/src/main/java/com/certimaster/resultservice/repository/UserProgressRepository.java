@@ -18,11 +18,6 @@ public interface UserProgressRepository extends JpaRepository<UserProgress, Long
     Optional<UserProgress> findByUserIdAndCertificationId(Long userId, Long certificationId);
 
     /**
-     * Find all progress records for a user.
-     */
-    List<UserProgress> findByUserIdOrderByLastUpdatedDesc(Long userId);
-
-    /**
      * Get certifications with progress for a user.
      */
     @Query("""

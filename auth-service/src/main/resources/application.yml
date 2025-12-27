@@ -25,11 +25,19 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-# JWT Configuration
+# JWT Configuration - RS256 Algorithm (Requirement 4.5)
+# For production, generate RSA key pair and configure private-key and public-key
+# Generate with: openssl genrsa -out private.pem 2048 && openssl rsa -in private.pem -pubout -out public.pem
 jwt:
-  secret: ${JWT_SECRET:a8f2c1e9d4b7f6a3c0d9e8b7f4a1c2d3e6f9b0a7d8c3f1e2b5a7c9d4e8b2f6}
-  expiration: 900000 # 15 minutes
-  refresh-expiration: 604800000 # 7 days
+  # Access token expiration: 15 minutes (Requirement 4.2)
+  access-token-expiration: 900000
+  # Refresh token expiration: 7 days (Requirement 4.3)
+  refresh-token-expiration: 604800000
+  # JWT issuer for token validation (Requirement 4.4)
+  issuer: certimaster-auth
+  # RSA keys (Base64 encoded) - leave empty for auto-generated keys in development
+  private-key: ${JWT_PRIVATE_KEY:}
+  public-key: ${JWT_PUBLIC_KEY:}
 
 # Logging
 logging:

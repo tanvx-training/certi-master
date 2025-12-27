@@ -23,4 +23,9 @@ public final class KafkaTopics {
      * Topic for exam session completed events.
      */
     public static final String EXAM_SESSION_COMPLETED = "exam-session-completed";
+
+    /**
+     * Topic for exam session created reply events.
+     */
+    public static final String EXAM_SESSION_CREATED_REPLY = "exam-session-created-reply";
 }

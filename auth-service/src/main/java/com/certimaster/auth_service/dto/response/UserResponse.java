@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -16,7 +17,7 @@ import java.util.List;
 public class UserResponse {
 
     private UserInfo user;
-    private PermissionResponse permissions;
+    private Set<String> permissions;
 
     @Getter
     @Setter

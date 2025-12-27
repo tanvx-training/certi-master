@@ -3,14 +3,18 @@ package com.certimaster.resultservice.entity;
 import com.certimaster.common_library.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Entity representing a user's exam session.
@@ -21,7 +25,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class UserExamSession extends BaseEntity {
 
     @Column(name = "user_id", nullable = false)
@@ -77,4 +81,7 @@ public class UserExamSession extends BaseEntity {
     @Column(name = "time_spent_seconds")
     @Builder.Default
     private Integer timeSpentSeconds = 0;
+
+    @OneToMany(mappedBy = "userExamSession")
+    private Set<UserAnswer> userAnswers = new HashSet<>();
 }

@@ -1,6 +1,7 @@
 package com.certimaster.resultservice.service;
 
 import com.certimaster.common_library.event.AnswerSubmittedEvent;
+import com.certimaster.common_library.event.ExamSessionCreatedEvent;
 import com.certimaster.common_library.event.ExamSessionStartedEvent;
 
 /**
@@ -10,8 +11,11 @@ public interface ExamResultService {
 
     /**
      * Create a new exam session from event.
+     *
+     * @param event the session started event
+     * @return the created event with session ID
      */
-    void createSession(ExamSessionStartedEvent event);
+    ExamSessionCreatedEvent createSession(ExamSessionStartedEvent event);
 
     /**
      * Save or update an answer from event.

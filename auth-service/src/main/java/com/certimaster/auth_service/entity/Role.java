@@ -1,17 +1,19 @@
 package com.certimaster.auth_service.entity;
 
 import com.certimaster.common_library.entity.BaseEntity;
-import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,7 +24,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class Role extends BaseEntity {
 
     @Column(nullable = false, unique = true, length = 50)
@@ -34,15 +36,25 @@ public class Role extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "is_system")
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "role_permissions",
+            joinColumns = @JoinColumn(name = "role_id")
+    )
+    @Column(name = "permission")
     @Builder.Default
-    private Boolean isSystem = false;
+    private Set<String> permissions = new HashSet<>();
 
-    @Column(name = "is_active")
-    @Builder.Default
-    private Boolean isActive = true;
+    // Helper methods
+    public void addPermission(String permission) {
+        permissions.add(permission);
+    }
 
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    private Set<RolePermission> rolePermissions = new HashSet<>();
+    public void removePermission(String permission) {
+        permissions.remove(permission);
+    }
+
+    public boolean hasPermission(String permission) {
+        return permissions.contains(permission);
+    }
 }

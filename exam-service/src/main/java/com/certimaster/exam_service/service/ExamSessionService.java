@@ -22,15 +22,6 @@ public interface ExamSessionService {
     ExamSessionResponse startExam(Long examId, Long userId, String username, StartExamRequest request);
 
     /**
-     * Get current session by ID.
-     *
-     * @param sessionId session ID
-     * @param userId user ID for validation
-     * @return exam session details
-     */
-    ExamSessionResponse getSession(Long sessionId, Long userId);
-
-    /**
      * Submit an answer for a question.
      *
      * @param sessionId session ID

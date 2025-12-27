@@ -10,13 +10,15 @@ import java.util.Optional;
 @Repository
 public interface UserAnswerRepository extends JpaRepository<UserAnswer, Long> {
 
-    List<UserAnswer> findBySessionId(Long sessionId);
+    List<UserAnswer> findByUserExamSessionId(Long sessionId);
 
-    Optional<UserAnswer> findBySessionIdAndQuestionId(Long sessionId, Long questionId);
+    Optional<UserAnswer> findByUserExamSessionIdAndQuestionId(Long sessionId, Long questionId);
 
-    long countBySessionIdAndIsCorrectTrue(Long sessionId);
+    long countByUserExamSessionIdAndIsCorrectTrue(Long sessionId);
 
-    long countBySessionIdAndIsCorrectFalse(Long sessionId);
+    long countByUserExamSessionIdAndIsCorrectFalse(Long sessionId);
 
-    long countBySessionIdAndIsFlaggedTrue(Long sessionId);
+    long countByUserExamSessionIdAndIsFlaggedTrue(Long sessionId);
+
+    long countByUserExamSessionIdAndSelectedOptionIdsIsNotNull(Long sessionId);
 }

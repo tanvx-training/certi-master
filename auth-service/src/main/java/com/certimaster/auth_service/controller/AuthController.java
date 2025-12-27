@@ -6,8 +6,10 @@ import com.certimaster.auth_service.dto.request.RegisterRequest;
 import com.certimaster.auth_service.dto.response.LoginResponse;
 import com.certimaster.auth_service.dto.response.RegisterResponse;
 import com.certimaster.auth_service.dto.response.UserResponse;
+import com.certimaster.auth_service.security.SecurityUtils;
 import com.certimaster.auth_service.service.UserService;
 import com.certimaster.common_library.dto.ResponseDto;
+import com.certimaster.common_library.exception.business.UnauthorizedException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,8 @@ public class AuthController {
     /**
      * Register new user
      * POST /api/v1/auth/register
+     * Creates a new user with hashed password and returns user info
+     * Requirement 1.1: Create new User with hashed password and return success response
      */
     @PostMapping("/register")
     public ResponseEntity<ResponseDto<RegisterResponse>> register(@Valid @RequestBody RegisterRequest registerRequest) {
@@ -44,6 +48,8 @@ public class AuthController {
     /**
      * Login
      * POST /api/v1/auth/login
+     * Validates credentials and returns JWT access token and refresh token
+     * Requirement 1.3: Return JWT access token and refresh token
      */
     @PostMapping("/login")
     public ResponseEntity<ResponseDto<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
@@ -53,17 +59,24 @@ public class AuthController {
 
     /**
      * Get current user
-     * POST /api/v1/auth/current
+     * GET /api/v1/auth/current
+     * Returns user info from JWT token via SecurityContext
+     * Requirement 5.2: Valid JWT populates SecurityContext with user details
      */
     @GetMapping("/current")
-    public ResponseEntity<ResponseDto<UserResponse>> getCurrentUser(@RequestHeader("Authorization") String authorization) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ResponseDto<UserResponse>> getCurrentUser() {
         log.info("Get current user request received");
-        return ResponseEntity.ok(userService.getCurrent(authorization));
+        Long userId = SecurityUtils.getCurrentUserId()
+                .orElseThrow(() -> new UnauthorizedException("User not authenticated"));
+        return ResponseEntity.ok(userService.getCurrentById(userId));
     }
 
     /**
      * Refresh access token
      * POST /api/v1/auth/refresh
+     * Validates refresh token and returns new access token
+     * Requirement 1.5: Return new access token with valid refresh token
      */
     @PostMapping("/refresh")
     public ResponseEntity<ResponseDto<LoginResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
@@ -74,6 +87,8 @@ public class AuthController {
     /**
      * Logout
      * POST /api/v1/auth/logout
+     * Invalidates the user's refresh token
+     * Requirement 1.6: Invalidate the refresh token
      */
     @PostMapping("/logout")
     @PreAuthorize("isAuthenticated()")
@@ -85,6 +100,8 @@ public class AuthController {
     /**
      * Verify email
      * GET /api/v1/auth/verify-email?token=xxx
+     * Validates verification token and marks email as verified
+     * Requirement 6.2: Mark email as verified with valid token
      */
     @GetMapping("/verify-email")
     public ResponseEntity<ResponseDto<Void>> verifyEmail(@RequestParam String token) {

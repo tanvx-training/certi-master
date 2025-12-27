@@ -10,13 +10,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Status {
 
-    ACTIVE("Active"),
-    INACTIVE("Inactive"),
-    PENDING("Pending"),
-    COMPLETED("Completed"),
-    FAILED("Failed"),
-    DELETED("Deleted"),
-    ARCHIVED("Archived");
+    ACTIVE("ACTIVE"),
+    INACTIVE("INACTIVE"),
+    PENDING("PENDING"),
+    COMPLETED("COMPLETED"),
+    FAILED("FAILED"),
+    DELETED("DELETED"),
+    ARCHIVED("ARCHIVED");
 
     private final String description;
 }

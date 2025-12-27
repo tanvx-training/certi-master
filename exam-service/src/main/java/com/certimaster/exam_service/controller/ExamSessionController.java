@@ -11,9 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,20 +44,6 @@ public class ExamSessionController {
         ExamSessionResponse result = examSessionService.startExam(examId, userId, username, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseDto.success("Exam session started successfully", result));
-    }
-
-    /**
-     * Get current session details.
-     */
-    @GetMapping("/{sessionId}")
-    public ResponseEntity<ResponseDto<ExamSessionResponse>> getSession(
-            @PathVariable Long sessionId,
-            @RequestHeader("X-User-Id") Long userId
-    ) {
-        log.debug("Get session {} for user {}", sessionId, userId);
-
-        ExamSessionResponse result = examSessionService.getSession(sessionId, userId);
-        return ResponseEntity.ok(ResponseDto.success(result));
     }
 
     /**

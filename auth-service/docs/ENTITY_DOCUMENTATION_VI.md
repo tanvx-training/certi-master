@@ -1,14 +1,14 @@
-# Tài Liệu Chi Tiết Về Các Entity Trong Hệ Thống Phân Quyền
+# Tài Liệu Chi Tiết Về Các Entity Trong Hệ Thống Phân Quyền (v2.0)
 
 ## Mục Lục
 
 1. [Tổng Quan Hệ Thống](#1-tổng-quan-hệ-thống)
-2. [Kiến Trúc RBAC](#2-kiến-trúc-rbac)
+2. [Kiến Trúc RBAC Đơn Giản](#2-kiến-trúc-rbac-đơn-giản)
 3. [Sơ Đồ Quan Hệ Entity](#3-sơ-đồ-quan-hệ-entity)
 4. [Chi Tiết Các Entity](#4-chi-tiết-các-entity)
-5. [Design Patterns và Rationale](#5-design-patterns-và-rationale)
-6. [Hướng Dẫn Sử Dụng](#6-hướng-dẫn-sử-dụng)
-7. [Ví Dụ Thực Tế](#7-ví-dụ-thực-tế)
+5. [JWT Token Structure](#5-jwt-token-structure)
+6. [Permission Format](#6-permission-format)
+7. [Hướng Dẫn Sử Dụng](#7-hướng-dẫn-sử-dụng)
 
 ---
 
@@ -16,70 +16,63 @@
 
 ### 1.1. Giới Thiệu
 
-Hệ thống auth-service triển khai một mô hình phân quyền RBAC (Role-Based Access Control) nâng cao với 11 entity chính, được thiết kế để đáp ứng các yêu cầu phân quyền phức tạp trong môi trường doanh nghiệp.
+Hệ thống auth-service v2.0 triển khai mô hình RBAC (Role-Based Access Control) đơn giản với **5 entity** chính, được tối ưu hóa cho ứng dụng CertiMaster.
 
-### 1.2. Đặc Điểm Nổi Bật
+### 1.2. Cải Tiến So Với v1.0
 
-- **Phân cấp tài nguyên (Resource Hierarchy)**: Module → Feature → Resource
-- **Mô hình phân quyền kép (Dual Permission Model)**: Quyền dựa trên Role + Quyền đặc biệt cho User
-- **Phân quyền theo ngữ cảnh (Context-Based Permissions)**: Hỗ trợ gán role theo organization, project, team
-- **Kiểm soát phạm vi dữ liệu (Data Scope Control)**: OWN, TEAM, DEPARTMENT, ORGANIZATION, ALL
-- **Điều kiện linh hoạt (Flexible Conditions)**: Sử dụng JSONB để lưu điều kiện phức tạp
-- **Quyền có thời hạn (Temporal Permissions)**: Hỗ trợ validFrom, validUntil, expiresAt
+| Tiêu chí | v1.0 | v2.0 |
+|----------|------|------|
+| Số lượng entity | 11 | 5 |
+| Số JOIN tối đa | 5-6 | 2 |
+| Permission format | Complex (Resource → Feature → Module) | Simple string (resource:action) |
+| Authorization | Database query mỗi request | JWT embedded permissions |
+| DataScope | OWN, TEAM, DEPARTMENT, ORGANIZATION, ALL | Không cần (ứng dụng đơn giản) |
 
-### 1.3. Công Nghệ Sử Dụng
+### 1.3. Đặc Điểm Nổi Bật
+
+- **Đơn giản**: Chỉ 5 bảng database
+- **Hiệu suất cao**: Tối đa 2 JOIN operations
+- **Stateless**: Permissions embedded trong JWT token
+- **Bảo mật**: BCrypt password hashing (strength 12), RS256 JWT signing
+- **Dễ bảo trì**: Code dễ đọc, dễ test
+
+### 1.4. Công Nghệ Sử Dụng
 
 - **Framework**: Spring Boot 3.x với JPA/Hibernate
-- **Database**: PostgreSQL với hỗ trợ JSONB
-- **ORM**: Jakarta Persistence API (JPA)
-- **Annotations**: Lombok để giảm boilerplate code
+- **Database**: PostgreSQL 12+
+- **Security**: Spring Security 6.x
+- **JWT**: jjwt với RS256 algorithm
+- **Password Hashing**: BCrypt (strength 12)
 
 ---
 
-## 2. Kiến Trúc RBAC
+## 2. Kiến Trúc RBAC Đơn Giản
 
-### 2.1. Mô Hình RBAC Nâng Cao
-
-```
-User ──┬──> UserRole ──> Role ──> RolePermission ──┬──> Resource
-       │                                            │
-       └──> UserPermission ────────────────────────┘
-                                                    │
-                                                    ├──> Feature ──> Module
-                                                    │
-                                                    └──> Action
-```
-
-### 2.2. Luồng Kiểm Tra Quyền
+### 2.1. Mô Hình RBAC
 
 ```
-1. Kiểm tra UserPermission với type = DENY
-   └─> Nếu có và còn hiệu lực → TỪ CHỐI ngay lập tức
-
-2. Kiểm tra UserPermission với type = GRANT
-   └─> Nếu có và còn hiệu lực → CHO PHÉP với DataScope của UserPermission
-
-3. Kiểm tra RolePermission qua UserRole
-   └─> Lấy tất cả role của user (theo context nếu có)
-   └─> Kiểm tra RolePermission của từng role
-   └─> Nếu có và còn hiệu lực → CHO PHÉP với DataScope của RolePermission
-
-4. Không tìm thấy quyền nào → TỪ CHỐI
+User ──> user_roles ──> Role ──> role_permissions (strings)
 ```
 
-### 2.3. Phân Cấp Tài Nguyên
+### 2.2. Luồng Authentication
 
 ```
-Module (Quản lý người dùng)
-  │
-  ├─> Feature (Danh sách người dùng)
-  │     │
-  │     ├─> Resource (Xem danh sách - READ)
-  │     └─> Resource (Xuất Excel - EXPORT)
-  │
-  └─> Feature (Tạo người dùng)
-        │
-        └─> Resource (Tạo mới - CREATE)
+1. User login với username/password
+2. Server validate credentials
+3. Server generate JWT access token (15 phút) + refresh token (7 ngày)
+4. JWT chứa: userId, username, roles, permissions
+5. Client gửi JWT trong Authorization header
+6. JwtAuthenticationFilter validate và populate SecurityContext
+```
+
+### 2.3. Luồng Authorization
+
+```
+1. Request đến với JWT token
+2. JwtAuthenticationFilter extract permissions từ token
+3. Spring Security check @PreAuthorize annotation
+4. Nếu có permission → cho phép
+5. Nếu không có → 403 Forbidden
 ```
 
 ---
@@ -90,23 +83,10 @@ Module (Quản lý người dùng)
 
 ```mermaid
 erDiagram
-    User ||--o{ UserRole : "has"
-    User ||--o{ UserPermission : "has"
+    User ||--o{ user_roles : "has"
     User ||--o{ RefreshToken : "has"
-    
-    Role ||--o{ UserRole : "assigned to"
-    Role ||--o{ RolePermission : "has"
-    
-    Module ||--o{ Feature : "contains"
-    Feature ||--o{ Feature : "parent-child"
-    Feature ||--o{ Resource : "contains"
-    
-    Action }o--|| Resource : "defines"
-    Resource ||--o{ RolePermission : "granted in"
-    Resource ||--o{ UserPermission : "granted in"
-    
-    DataScope }o--o{ RolePermission : "limits"
-    DataScope }o--o{ UserPermission : "limits"
+    Role ||--o{ user_roles : "assigned to"
+    Role ||--o{ role_permissions : "has"
     
     User {
         Long id PK
@@ -125,104 +105,16 @@ erDiagram
         String code UK
         String name
         String description
-        Boolean isSystem
-        Boolean isActive
     }
     
-    UserRole {
-        Long id PK
-        Long userId FK
-        Long roleId FK
-        String contextType
-        Long contextId
-        LocalDateTime validFrom
-        LocalDateTime validUntil
-        Boolean isPrimary
+    user_roles {
+        Long user_id FK
+        Long role_id FK
     }
     
-    Module {
-        Long id PK
-        String code UK
-        String name
-        String description
-        String icon
-        String route
-        Integer orderIndex
-        Boolean isActive
-    }
-    
-    Feature {
-        Long id PK
-        Long moduleId FK
-        String code
-        String name
-        String description
-        String route
-        String icon
-        Integer orderIndex
-        Long parentFeatureId FK
-        Boolean isActive
-    }
-    
-    Action {
-        Long id PK
-        String code UK
-        String name
-        String description
-        String httpMethod
-        Boolean isSystem
-    }
-    
-    Resource {
-        Long id PK
-        Long featureId FK
-        Long actionId FK
-        String code UK
-        String name
-        String description
-        String apiPathPattern
-        String httpMethod
-        String componentType
-        String componentKey
-        String defaultScope
-        Boolean requiresApproval
-        Boolean isActive
-    }
-    
-    DataScope {
-        Long id PK
-        String code UK
-        String name
-        String description
-        Integer level
-        String filterType
-        String filterExpression
-    }
-    
-    RolePermission {
-        Long id PK
-        Long roleId FK
-        Long resourceId FK
-        Long dataScopeId FK
-        JSONB conditions
-        Long grantedBy
-        LocalDateTime grantedAt
-        LocalDateTime expiresAt
-        Boolean isActive
-    }
-    
-    UserPermission {
-        Long id PK
-        Long userId FK
-        Long resourceId FK
-        Long dataScopeId FK
-        String permissionType
-        JSONB conditions
-        Long grantedBy
-        LocalDateTime grantedAt
-        LocalDateTime expiresAt
-        String reason
-        Boolean isActive
+    role_permissions {
+        Long role_id FK
+        String permission
     }
     
     RefreshToken {
@@ -233,26 +125,15 @@ erDiagram
     }
 ```
 
-### 3.2. Nhóm Entity Theo Chức Năng
+### 3.2. Danh Sách Entity
 
-#### Nhóm 1: Identity & Authentication
-- **User**: Thông tin người dùng
-- **RefreshToken**: Quản lý refresh token cho JWT
-
-#### Nhóm 2: Role Management
-- **Role**: Định nghĩa vai trò
-- **UserRole**: Gán vai trò cho người dùng (với context)
-
-#### Nhóm 3: Resource Hierarchy
-- **Module**: Nhóm tính năng cấp cao
-- **Feature**: Tính năng cụ thể
-- **Action**: Hành động có thể thực hiện
-- **Resource**: Tài nguyên có thể phân quyền
-
-#### Nhóm 4: Permission Management
-- **DataScope**: Phạm vi dữ liệu
-- **RolePermission**: Quyền của role
-- **UserPermission**: Quyền đặc biệt của user
+| # | Entity | Bảng Database | Mô Tả |
+|---|--------|---------------|-------|
+| 1 | User | users | Thông tin người dùng |
+| 2 | Role | roles | Vai trò (ADMIN, INSTRUCTOR, STUDENT) |
+| 3 | - | user_roles | Junction table User-Role |
+| 4 | - | role_permissions | Permissions của Role (strings) |
+| 5 | RefreshToken | refresh_tokens | Quản lý refresh token |
 
 ---
 
@@ -260,152 +141,69 @@ erDiagram
 
 ### 4.1. User Entity
 
-**Mục đích**: Lưu trữ thông tin người dùng và làm điểm trung tâm cho authentication/authorization.
+**Mục đích**: Lưu trữ thông tin người dùng và authentication.
 
 **Bảng database**: `users`
-
-**Kế thừa**: `BaseEntity` (cung cấp id, createdAt, updatedAt, createdBy, updatedBy)
 
 #### Các Trường (Fields)
 
 | Tên Trường | Kiểu Dữ Liệu | Ràng Buộc | Mô Tả |
 |------------|--------------|-----------|-------|
-| `email` | String(300) | NOT NULL, UNIQUE | Email đăng nhập, phải duy nhất trong hệ thống |
-| `username` | String(100) | NOT NULL, UNIQUE | Tên đăng nhập, phải duy nhất |
-| `passwordHash` | String | NOT NULL | Mật khẩu đã được hash (BCrypt/Argon2), không bao giờ lưu plain text |
-| `fullName` | String(300) | NULLABLE | Tên đầy đủ của người dùng để hiển thị |
-| `avatarUrl` | String(500) | NULLABLE | URL ảnh đại diện (có thể là CDN link) |
-| `phone` | String(20) | NULLABLE | Số điện thoại liên hệ |
-| `status` | String(20) | DEFAULT 'ACTIVE' | Trạng thái tài khoản: ACTIVE, INACTIVE, LOCKED, SUSPENDED |
-| `emailVerified` | Boolean | DEFAULT false | Đánh dấu email đã được xác thực chưa |
+| `id` | Long | PK, AUTO | Primary key |
+| `email` | String(300) | NOT NULL, UNIQUE | Email đăng nhập |
+| `username` | String(100) | NOT NULL, UNIQUE | Tên đăng nhập |
+| `passwordHash` | String(255) | NOT NULL | Mật khẩu BCrypt hash |
+| `fullName` | String(300) | NULLABLE | Tên đầy đủ |
+| `avatarUrl` | String(500) | NULLABLE | URL ảnh đại diện |
+| `phone` | String(20) | NULLABLE | Số điện thoại |
+| `status` | String(20) | DEFAULT 'ACTIVE' | ACTIVE, INACTIVE, LOCKED, SUSPENDED |
+| `emailVerified` | Boolean | DEFAULT false | Email đã xác thực |
 
 #### Quan Hệ (Relationships)
 
 ```java
-@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-private Set<UserRole> userRoles;
+@ManyToMany(fetch = FetchType.EAGER)
+@JoinTable(
+    name = "user_roles",
+    joinColumns = @JoinColumn(name = "user_id"),
+    inverseJoinColumns = @JoinColumn(name = "role_id")
+)
+private Set<Role> roles;
 ```
-- **Loại**: One-to-Many
-- **Entity liên kết**: UserRole
-- **Cascade**: ALL (khi xóa User, xóa tất cả UserRole)
-- **Fetch**: LAZY (chỉ load khi cần)
-- **Ý nghĩa**: Một user có thể có nhiều role (trong các context khác nhau)
-
-```java
-@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-private Set<UserPermission> userPermissions;
-```
-- **Loại**: One-to-Many
-- **Entity liên kết**: UserPermission
-- **Ý nghĩa**: Một user có thể có nhiều quyền đặc biệt (GRANT hoặc DENY)
 
 #### Helper Methods
 
 ```java
-public void addUserRole(UserRole userRole)
+public void addRole(Role role)           // Thêm role
+public void removeRole(Role role)        // Xóa role
+public boolean hasRole(String roleCode)  // Kiểm tra có role
+public Set<String> getAllPermissions()   // Lấy tất cả permissions
 ```
-- Thêm role cho user và maintain bidirectional relationship
-- Tự động set `userRole.setUser(this)`
-
-```java
-public void removeUserRole(UserRole userRole)
-```
-- Xóa role khỏi user và break bidirectional relationship
-- Tự động set `userRole.setUser(null)`
-
-#### Design Rationale
-
-1. **Tách passwordHash**: Tên field nhấn mạnh không lưu plain text password
-2. **Status dạng String**: Dễ mở rộng thêm trạng thái mới mà không cần alter enum
-3. **emailVerified**: Hỗ trợ email verification flow (gửi link xác thực)
-4. **Unique constraints**: Email và username đều unique để tránh duplicate accounts
-5. **Helper methods**: Đảm bảo bidirectional relationship luôn consistent
 
 #### Ví Dụ Sử Dụng
 
 ```java
 // Tạo user mới
 User user = User.builder()
-    .email("nguyen.van.a@example.com")
-    .username("nguyenvana")
+    .email("student@example.com")
+    .username("student01")
     .passwordHash(passwordEncoder.encode("password123"))
     .fullName("Nguyễn Văn A")
-    .phone("0901234567")
     .status("ACTIVE")
     .emailVerified(false)
     .build();
 
-// Thêm role cho user
-UserRole userRole = UserRole.builder()
-    .role(adminRole)
-    .contextType("ORGANIZATION")
-    .contextId(orgId)
-    .build();
-user.addUserRole(userRole);
+// Thêm role STUDENT
+Role studentRole = roleRepository.findByCode("STUDENT").orElseThrow();
+user.addRole(studentRole);
+userRepository.save(user);
 ```
 
 ---
 
-### 4.2. RefreshToken Entity
+### 4.2. Role Entity
 
-**Mục đích**: Quản lý refresh tokens cho JWT authentication flow, cho phép revoke tokens khi cần.
-
-**Bảng database**: `refresh_tokens`
-
-#### Các Trường (Fields)
-
-| Tên Trường | Kiểu Dữ Liệu | Ràng Buộc | Mô Tả |
-|------------|--------------|-----------|-------|
-| `user` | User | NOT NULL, FK | User sở hữu token này |
-| `token` | String(500) | NOT NULL, UNIQUE | Refresh token string (UUID hoặc JWT) |
-| `expiresAt` | LocalDateTime | NOT NULL | Thời điểm token hết hạn |
-
-#### Quan Hệ (Relationships)
-
-```java
-@ManyToOne(fetch = FetchType.LAZY)
-@JoinColumn(name = "user_id", nullable = false)
-private User user;
-```
-- **Loại**: Many-to-One
-- **Ý nghĩa**: Nhiều refresh tokens có thể thuộc về một user (multi-device login)
-
-#### Methods
-
-```java
-public boolean isExpired()
-```
-- Kiểm tra token còn hiệu lực không
-- Return: `true` nếu `LocalDateTime.now()` sau `expiresAt`
-
-#### Design Rationale
-
-1. **Lưu trong DB**: Cho phép revoke tokens (logout, security breach)
-2. **Unique token**: Tránh token collision
-3. **expiresAt**: Tự động invalidate tokens cũ, giảm database bloat
-4. **Many-to-One với User**: Hỗ trợ multi-device login
-
-#### Ví Dụ Sử Dụng
-
-```java
-// Tạo refresh token
-RefreshToken refreshToken = RefreshToken.builder()
-    .user(user)
-    .token(UUID.randomUUID().toString())
-    .expiresAt(LocalDateTime.now().plusDays(30))
-    .build();
-
-// Kiểm tra token
-if (refreshToken.isExpired()) {
-    throw new TokenExpiredException("Refresh token has expired");
-}
-```
-
----
-
-### 4.3. Role Entity
-
-**Mục đích**: Định nghĩa các vai trò trong hệ thống (ADMIN, USER, MANAGER, INSTRUCTOR, etc.)
+**Mục đích**: Định nghĩa vai trò trong hệ thống.
 
 **Bảng database**: `roles`
 
@@ -413,49 +211,226 @@ if (refreshToken.isExpired()) {
 
 | Tên Trường | Kiểu Dữ Liệu | Ràng Buộc | Mô Tả |
 |------------|--------------|-----------|-------|
-| `code` | String(50) | NOT NULL, UNIQUE | Mã vai trò dùng trong code (ADMIN, USER, MANAGER) |
-| `name` | String(100) | NOT NULL | Tên hiển thị của vai trò (Quản trị viên, Người dùng) |
-| `description` | Text | NULLABLE | Mô tả chi tiết vai trò và trách nhiệm |
-| `isSystem` | Boolean | DEFAULT false | Vai trò hệ thống không được xóa/sửa (SUPER_ADMIN) |
-| `isActive` | Boolean | DEFAULT true | Vai trò có đang active không |
+| `id` | Long | PK, AUTO | Primary key |
+| `code` | String(50) | NOT NULL, UNIQUE | Mã vai trò (ADMIN, INSTRUCTOR, STUDENT) |
+| `name` | String(100) | NOT NULL | Tên hiển thị |
+| `description` | Text | NULLABLE | Mô tả vai trò |
 
-#### Quan Hệ (Relationships)
+#### Permissions (ElementCollection)
 
 ```java
-@OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-private Set<RolePermission> rolePermissions;
+@ElementCollection(fetch = FetchType.EAGER)
+@CollectionTable(
+    name = "role_permissions",
+    joinColumns = @JoinColumn(name = "role_id")
+)
+@Column(name = "permission")
+private Set<String> permissions;
 ```
-- **Loại**: One-to-Many
-- **Ý nghĩa**: Một role có nhiều permissions (quyền truy cập các resource khác nhau)
 
-#### Design Rationale
+#### Predefined Roles
 
-1. **code vs name**: `code` để dùng trong code (constant), `name` để hiển thị UI (có thể đa ngôn ngữ)
-2. **isSystem**: Protect các role quan trọng khỏi bị xóa nhầm (SUPER_ADMIN, SYSTEM)
-3. **isActive**: Soft disable role thay vì xóa (preserve audit trail)
-4. **description**: Giúp admin hiểu rõ vai trò và trách nhiệm
+| Role | Code | Permissions |
+|------|------|-------------|
+| Admin | ADMIN | Tất cả permissions |
+| Instructor | INSTRUCTOR | exam:*, question:*, result:read_all |
+| Student | STUDENT | exam:read, question:read, result:read |
 
-#### Ví Dụ Sử Dụng
+---
+
+### 4.3. RefreshToken Entity
+
+**Mục đích**: Quản lý refresh tokens cho JWT authentication.
+
+**Bảng database**: `refresh_tokens`
+
+#### Các Trường (Fields)
+
+| Tên Trường | Kiểu Dữ Liệu | Ràng Buộc | Mô Tả |
+|------------|--------------|-----------|-------|
+| `id` | Long | PK, AUTO | Primary key |
+| `userId` | Long | NOT NULL, FK | User sở hữu token |
+| `token` | String(500) | NOT NULL, UNIQUE | Refresh token string |
+| `expiresAt` | LocalDateTime | NOT NULL | Thời điểm hết hạn (7 ngày) |
+
+---
+
+## 5. JWT Token Structure
+
+### 5.1. Access Token Claims
+
+```json
+{
+  "sub": "123",
+  "username": "student01",
+  "email": "student@example.com",
+  "roles": ["STUDENT"],
+  "permissions": ["exam:read", "question:read", "result:read"],
+  "type": "access",
+  "iss": "certimaster-auth",
+  "iat": 1703577600,
+  "exp": 1703578500
+}
+```
+
+### 5.2. Token Configuration
+
+| Token Type | Expiration | Algorithm |
+|------------|------------|-----------|
+| Access Token | 15 phút (900000 ms) | RS256 |
+| Refresh Token | 7 ngày (604800000 ms) | RS256 |
+
+---
+
+## 6. Permission Format
+
+### 6.1. Format
+
+```
+resource:action
+```
+
+- **resource**: Tên tài nguyên (lowercase)
+- **action**: Hành động (lowercase)
+
+### 6.2. Danh Sách Permissions
+
+| Permission | Mô Tả |
+|------------|-------|
+| `user:create` | Tạo user mới |
+| `user:read` | Xem thông tin user |
+| `user:update` | Cập nhật user |
+| `user:delete` | Xóa user |
+| `user:read_all` | Xem tất cả users |
+| `role:create` | Tạo role mới |
+| `role:read` | Xem thông tin role |
+| `role:update` | Cập nhật role |
+| `role:delete` | Xóa role |
+| `role:assign` | Gán role cho user |
+| `exam:create` | Tạo exam mới |
+| `exam:read` | Xem exam |
+| `exam:update` | Cập nhật exam |
+| `exam:delete` | Xóa exam |
+| `question:create` | Tạo question mới |
+| `question:read` | Xem question |
+| `question:update` | Cập nhật question |
+| `question:delete` | Xóa question |
+| `result:read` | Xem kết quả của mình |
+| `result:read_all` | Xem tất cả kết quả |
+| `system:config` | Cấu hình hệ thống |
+| `system:audit` | Xem audit logs |
+
+### 6.3. Sử Dụng Trong Code
 
 ```java
-// Tạo role mới
-Role instructorRole = Role.builder()
-    .code("INSTRUCTOR")
-    .name("Giảng viên")
-    .description("Giảng viên có thể tạo và quản lý khóa học của mình")
-    .isSystem(false)
-    .isActive(true)
-    .build();
+// Import constants
+import static com.certimaster.auth_service.constant.Permissions.*;
 
-// Tạo system role
-Role superAdminRole = Role.builder()
-    .code("SUPER_ADMIN")
-    .name("Quản trị viên cấp cao")
-    .description("Có toàn quyền trong hệ thống")
-    .isSystem(true)  // Không được xóa
-    .isActive(true)
-    .build();
+// Sử dụng với @PreAuthorize
+@PreAuthorize("hasAuthority('" + EXAM_CREATE + "')")
+public ResponseDto<ExamResponse> createExam(ExamRequest request) {
+    // ...
+}
+
+// Hoặc hardcode string
+@PreAuthorize("hasAuthority('exam:create')")
+public ResponseDto<ExamResponse> createExam(ExamRequest request) {
+    // ...
+}
 ```
 
 ---
 
+## 7. Hướng Dẫn Sử Dụng
+
+### 7.1. Registration Flow
+
+```java
+// 1. User đăng ký
+POST /api/v1/auth/register
+{
+    "email": "student@example.com",
+    "username": "student01",
+    "password": "password123",
+    "fullName": "Nguyễn Văn A"
+}
+
+// 2. Server tự động:
+//    - Hash password với BCrypt (strength 12)
+//    - Gán role STUDENT
+//    - Tạo email verification token
+//    - Gửi email xác thực
+```
+
+### 7.2. Login Flow
+
+```java
+// 1. User đăng nhập
+POST /api/v1/auth/login
+{
+    "username": "student01",
+    "password": "password123"
+}
+
+// 2. Server trả về
+{
+    "success": true,
+    "data": {
+        "user": { ... },
+        "tokens": {
+            "accessToken": "eyJhbGciOiJSUzI1NiIs...",
+            "refreshToken": "eyJhbGciOiJSUzI1NiIs...",
+            "tokenType": "Bearer",
+            "expiresIn": 900
+        },
+        "permissions": ["exam:read", "question:read", "result:read"]
+    }
+}
+```
+
+### 7.3. Protected API Call
+
+```java
+// Client gửi request với JWT
+GET /api/v1/exams
+Authorization: Bearer eyJhbGciOiJSUzI1NiIs...
+
+// Server validate JWT và check permission
+@PreAuthorize("hasAuthority('exam:read')")
+public ResponseDto<List<ExamResponse>> getExams() {
+    // ...
+}
+```
+
+### 7.4. Token Refresh
+
+```java
+// Khi access token hết hạn
+POST /api/v1/auth/refresh
+{
+    "refreshToken": "eyJhbGciOiJSUzI1NiIs..."
+}
+
+// Server trả về access token mới
+{
+    "success": true,
+    "data": {
+        "accessToken": "eyJhbGciOiJSUzI1NiIs...",
+        "expiresIn": 900
+    }
+}
+```
+
+---
+
+## Changelog
+
+### v2.0 (2024-12-27)
+- Simplified từ 11 entity xuống 5 entity
+- Chuyển sang string-based permissions
+- JWT embedded permissions cho stateless authorization
+- Tối ưu performance (max 2 JOINs)
+- Loại bỏ: Module, Feature, Resource, Action, DataScope, UserPermission, UserRole, RolePermission entities
+
+### v1.0
+- Initial complex RBAC implementation với 11 entities

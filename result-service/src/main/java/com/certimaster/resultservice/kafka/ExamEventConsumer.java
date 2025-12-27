@@ -1,12 +1,14 @@
 package com.certimaster.resultservice.kafka;
 
 import com.certimaster.common_library.event.AnswerSubmittedEvent;
+import com.certimaster.common_library.event.ExamSessionCreatedEvent;
 import com.certimaster.common_library.event.ExamSessionStartedEvent;
 import com.certimaster.common_library.event.KafkaTopics;
 import com.certimaster.resultservice.service.ExamResultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Component;
 
 /**
@@ -20,24 +22,29 @@ public class ExamEventConsumer {
     private final ExamResultService examResultService;
 
     /**
-     * Handle exam session started event.
+     * Handle exam session started event and send reply with created session ID.
+     * Uses Request-Reply pattern.
      */
     @KafkaListener(
             topics = KafkaTopics.EXAM_SESSION_STARTED,
             containerFactory = "sessionKafkaListenerContainerFactory"
     )
-    public void handleSessionStarted(ExamSessionStartedEvent event) {
-        log.info("Received ExamSessionStartedEvent for session {} user {}",
-                event.getSessionId(), event.getUserId());
+    @SendTo
+    public ExamSessionCreatedEvent handleSessionStarted(ExamSessionStartedEvent event) {
+        log.info("Received ExamSessionStartedEvent for user {} exam {}",
+                event.getUserId(), event.getExamId());
 
-        try {
-            examResultService.createSession(event);
-            log.info("Successfully created session {} in result-service", event.getSessionId());
-        } catch (Exception e) {
-            log.error("Failed to process ExamSessionStartedEvent for session {}",
-                    event.getSessionId(), e);
-            // Could implement retry logic or dead letter queue here
+        ExamSessionCreatedEvent reply = examResultService.createSession(event);
+
+        if (reply.isSuccess()) {
+            log.info("Successfully created session {} for user {} exam {}",
+                    reply.getSessionId(), event.getUserId(), event.getExamId());
+        } else {
+            log.error("Failed to create session for user {} exam {}: {}",
+                    event.getUserId(), event.getExamId(), reply.getErrorMessage());
         }
+
+        return reply;
     }
 
     /**

@@ -35,7 +35,7 @@ jwt:
 logging:
   level:
     root: INFO
-    com.certimaster.authservice: DEBUG
+    com.certimaster.auth_service: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
 
@@ -52,11 +52,21 @@ management:
 # Exam Session Configuration
 exam:
   session:
-    max-concurrent: 1000
-    expiration-check-interval: 60000 # 1 minute in milliseconds
-    grace-period: 300000 # 5 minutes in milliseconds
-  generation:
-    difficulty-distribution:
-      easy: 30
-      medium: 50
-      hard: 20
+    reply-timeout-seconds: 30
+
+# External Services
+services:
+  result-service:
+    url: ${RESULT_SERVICE_URL:http://localhost:8084}
+
+# Feign Client Configuration
+spring.cloud.openfeign:
+  client:
+    config:
+      default:
+        connect-timeout: 5000
+        read-timeout: 10000
+        logger-level: basic
+      result-service:
+        connect-timeout: 5000
+        read-timeout: 10000

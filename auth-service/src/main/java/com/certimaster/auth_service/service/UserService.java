@@ -21,4 +21,6 @@ public interface UserService {
     ResponseDto<Void> verifyEmail(String token);
 
     ResponseDto<UserResponse> getCurrent(String authorization);
+
+    ResponseDto<UserResponse> getCurrentById(Long userId);
 }
