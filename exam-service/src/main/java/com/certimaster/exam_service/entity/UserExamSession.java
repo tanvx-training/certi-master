@@ -1,8 +1,12 @@
-package com.certimaster.resultservice.entity;
+package com.certimaster.exam_service.entity;
 
 import com.certimaster.common_library.entity.BaseEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -18,6 +22,7 @@ import java.util.Set;
 
 /**
  * Entity representing a user's exam session.
+ * Migrated from result-service to exam-service for local session management.
  */
 @Entity
 @Table(name = "user_exam_sessions")
@@ -31,11 +36,13 @@ public class UserExamSession extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "exam_id", nullable = false)
-    private Long examId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "exam_id", nullable = false)
+    private Exam exam;
 
-    @Column(name = "certification_id")
-    private Long certificationId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "certification_id")
+    private Certification certification;
 
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
@@ -82,6 +89,7 @@ public class UserExamSession extends BaseEntity {
     @Builder.Default
     private Integer timeSpentSeconds = 0;
 
-    @OneToMany(mappedBy = "userExamSession")
+    @Builder.Default
+    @OneToMany(mappedBy = "userExamSession", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private Set<UserAnswer> userAnswers = new HashSet<>();
 }

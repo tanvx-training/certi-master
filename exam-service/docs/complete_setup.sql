@@ -1266,3 +1266,123 @@ VALUES (36, 7, 38, 1),
 -- You can now start using the exam-service database!
 -- =====================================================
 -- ROLLBACK;
+
+
+-- =====================================================
+-- PART 5: USER EXAM SESSIONS AND ANSWERS TABLES
+-- =====================================================
+-- Added for exam session migration (Requirements 5.1, 5.2)
+-- These tables manage user exam sessions locally in exam-service
+
+-- Drop tables if they exist (in dependency order)
+DROP TABLE IF EXISTS user_answers CASCADE;
+DROP TABLE IF EXISTS user_exam_sessions CASCADE;
+
+-- Table: user_exam_sessions
+-- Tracks user's exam session state, progress, and statistics
+CREATE TABLE user_exam_sessions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    exam_id BIGINT NOT NULL,
+    certification_id BIGINT,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'IN_PROGRESS',
+    mode VARCHAR(20) NOT NULL,
+    exam_title VARCHAR(500),
+    total_questions INTEGER NOT NULL,
+    duration_minutes INTEGER,
+    answered_count INTEGER DEFAULT 0,
+    correct_count INTEGER DEFAULT 0,
+    wrong_count INTEGER DEFAULT 0,
+    unanswered_count INTEGER,
+    flagged_count INTEGER DEFAULT 0,
+    time_spent_seconds INTEGER DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_by VARCHAR(50),
+    
+    CONSTRAINT fk_session_exam FOREIGN KEY (exam_id)
+        REFERENCES exams(id) ON DELETE CASCADE,
+    CONSTRAINT fk_session_certification FOREIGN KEY (certification_id)
+        REFERENCES certifications(id) ON DELETE SET NULL,
+    CONSTRAINT chk_session_status CHECK (status IN ('IN_PROGRESS', 'COMPLETED', 'ABANDONED', 'TIMED_OUT')),
+    CONSTRAINT chk_session_mode CHECK (mode IN ('PRACTICE', 'TIMED')),
+    CONSTRAINT chk_session_counts CHECK (
+        answered_count >= 0 AND
+        correct_count >= 0 AND
+        wrong_count >= 0 AND
+        flagged_count >= 0 AND
+        time_spent_seconds >= 0
+    )
+);
+
+COMMENT ON TABLE user_exam_sessions IS 'Tracks user exam session state and progress';
+COMMENT ON COLUMN user_exam_sessions.user_id IS 'User ID from auth-service';
+COMMENT ON COLUMN user_exam_sessions.status IS 'Session status: IN_PROGRESS, COMPLETED, ABANDONED, TIMED_OUT';
+COMMENT ON COLUMN user_exam_sessions.mode IS 'Exam mode: PRACTICE (immediate feedback) or TIMED (no feedback until complete)';
+
+-- Table: user_answers
+-- Stores user's answers for each question in a session
+CREATE TABLE user_answers (
+    id BIGSERIAL PRIMARY KEY,
+    session_id BIGINT NOT NULL,
+    question_id BIGINT NOT NULL,
+    selected_option_ids BIGINT[],
+    correct_option_ids BIGINT[],
+    is_correct BOOLEAN,
+    is_flagged BOOLEAN DEFAULT FALSE,
+    time_spent_seconds INTEGER DEFAULT 0,
+    answered_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_by VARCHAR(50),
+    
+    CONSTRAINT fk_answer_session FOREIGN KEY (session_id)
+        REFERENCES user_exam_sessions(id) ON DELETE CASCADE,
+    CONSTRAINT fk_answer_question FOREIGN KEY (question_id)
+        REFERENCES questions(id) ON DELETE CASCADE,
+    CONSTRAINT chk_answer_time CHECK (time_spent_seconds >= 0)
+);
+
+COMMENT ON TABLE user_answers IS 'Stores user answers for each question in an exam session';
+COMMENT ON COLUMN user_answers.selected_option_ids IS 'Array of selected option IDs';
+COMMENT ON COLUMN user_answers.correct_option_ids IS 'Array of correct option IDs (cached for result calculation)';
+COMMENT ON COLUMN user_answers.is_correct IS 'Whether the answer is correct (null if not yet answered)';
+
+-- =====================================================
+-- PART 6: INDEXES FOR USER EXAM SESSIONS AND ANSWERS
+-- =====================================================
+
+-- User exam sessions indexes
+CREATE INDEX idx_user_exam_sessions_user_status ON user_exam_sessions(user_id, status);
+CREATE INDEX idx_user_exam_sessions_user_exam ON user_exam_sessions(user_id, exam_id);
+CREATE INDEX idx_user_exam_sessions_user_exam_status ON user_exam_sessions(user_id, exam_id, status);
+CREATE INDEX idx_user_exam_sessions_id_user ON user_exam_sessions(id, user_id);
+CREATE INDEX idx_user_exam_sessions_status ON user_exam_sessions(status);
+CREATE INDEX idx_user_exam_sessions_exam_id ON user_exam_sessions(exam_id);
+CREATE INDEX idx_user_exam_sessions_certification_id ON user_exam_sessions(certification_id) WHERE certification_id IS NOT NULL;
+
+-- User answers indexes
+CREATE INDEX idx_user_answers_session ON user_answers(session_id);
+CREATE UNIQUE INDEX idx_user_answers_session_question ON user_answers(session_id, question_id);
+CREATE INDEX idx_user_answers_session_answered ON user_answers(session_id) WHERE selected_option_ids IS NOT NULL;
+CREATE INDEX idx_user_answers_session_correct ON user_answers(session_id, is_correct) WHERE is_correct = TRUE;
+CREATE INDEX idx_user_answers_session_flagged ON user_answers(session_id, is_flagged) WHERE is_flagged = TRUE;
+CREATE INDEX idx_user_answers_question_id ON user_answers(question_id);
+
+-- =====================================================
+-- UPDATED SETUP COMPLETE
+-- =====================================================
+-- The database now includes:
+-- - 10 tables (original 8 + user_exam_sessions + user_answers)
+-- - All necessary indexes for optimal query performance
+-- - 3 certifications (OCA Java SE 11, Spring Professional, CKA)
+-- - 16 topics across all certifications
+-- - 60+ questions with options
+-- - 9 exams (3 per certification: PRACTICE, MOCK, FINAL)
+-- - 15 tags for question categorization
+-- - User exam session tracking tables for local session management
+-- =====================================================

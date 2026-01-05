@@ -1,9 +1,13 @@
 package com.certimaster.exam_service.service;
 
+import com.certimaster.common_library.event.ExamResultResponse;
 import com.certimaster.exam_service.dto.request.AnswerQuestionRequest;
 import com.certimaster.exam_service.dto.request.StartExamRequest;
 import com.certimaster.exam_service.dto.response.AnswerFeedbackResponse;
 import com.certimaster.exam_service.dto.response.ExamSessionResponse;
+import com.certimaster.exam_service.dto.response.UserExamSessionResponse;
+
+import java.util.List;
 
 /**
  * Service interface for Exam Session operations.
@@ -33,9 +37,29 @@ public interface ExamSessionService {
 
     /**
      * Complete/finish an exam session.
+     * Publishes ExamCompletedEvent to Kafka and waits for result calculation.
      *
      * @param sessionId session ID
      * @param userId user ID for validation
+     * @return exam result response with scores and detailed feedback
      */
-    void completeSession(Long sessionId, Long userId);
+    ExamResultResponse completeSession(Long sessionId, Long userId);
+
+    /**
+     * Get session details by ID.
+     * Validates user ownership before returning session data.
+     *
+     * @param sessionId session ID
+     * @param userId user ID for validation
+     * @return session details with progress statistics
+     */
+    UserExamSessionResponse getSession(Long sessionId, Long userId);
+
+    /**
+     * Get all active (IN_PROGRESS) sessions for a user.
+     *
+     * @param userId user ID
+     * @return list of active sessions
+     */
+    List<UserExamSessionResponse> getActiveSessions(Long userId);
 }

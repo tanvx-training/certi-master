@@ -1,8 +1,7 @@
 package com.certimaster.resultservice.config;
 
-import com.certimaster.common_library.event.AnswerSubmittedEvent;
-import com.certimaster.common_library.event.ExamSessionCreatedEvent;
-import com.certimaster.common_library.event.ExamSessionStartedEvent;
+import com.certimaster.common_library.event.ExamCompletedEvent;
+import com.certimaster.common_library.event.ExamResultResponse;
 import com.certimaster.common_library.event.KafkaTopics;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -24,6 +23,10 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Kafka consumer configuration for result-service.
+ * Configures listener for ExamCompletedEvent with reply pattern.
+ */
 @EnableKafka
 @Configuration
 public class KafkaConsumerConfig {
@@ -34,9 +37,9 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.consumer.group-id:result-service-group}")
     private String groupId;
 
-    // Producer for reply messages
+    // Producer for ExamResultResponse reply messages
     @Bean
-    public ProducerFactory<String, ExamSessionCreatedEvent> replyProducerFactory() {
+    public ProducerFactory<String, ExamResultResponse> examResultReplyProducerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -45,40 +48,27 @@ public class KafkaConsumerConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, ExamSessionCreatedEvent> replyKafkaTemplate() {
-        KafkaTemplate<String, ExamSessionCreatedEvent> template = new KafkaTemplate<>(replyProducerFactory());
-        template.setDefaultTopic(KafkaTopics.EXAM_SESSION_CREATED_REPLY);
+    public KafkaTemplate<String, ExamResultResponse> examResultReplyKafkaTemplate() {
+        KafkaTemplate<String, ExamResultResponse> template = new KafkaTemplate<>(examResultReplyProducerFactory());
+        template.setDefaultTopic(KafkaTopics.EXAM_RESULT_REPLY);
         return template;
     }
 
+    // Consumer factory for ExamCompletedEvent
     @Bean
-    public ConsumerFactory<String, ExamSessionStartedEvent> sessionConsumerFactory() {
+    public ConsumerFactory<String, ExamCompletedEvent> examCompletedConsumerFactory() {
         Map<String, Object> props = consumerProps();
         return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-                new JsonDeserializer<>(ExamSessionStartedEvent.class, false));
+                new JsonDeserializer<>(ExamCompletedEvent.class, false));
     }
 
+    // Listener container factory for ExamCompletedEvent with reply support
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, ExamSessionStartedEvent> sessionKafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, ExamSessionStartedEvent> factory =
+    public ConcurrentKafkaListenerContainerFactory<String, ExamCompletedEvent> examCompletedKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, ExamCompletedEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(sessionConsumerFactory());
-        factory.setReplyTemplate(replyKafkaTemplate());
-        return factory;
-    }
-
-    @Bean
-    public ConsumerFactory<String, AnswerSubmittedEvent> answerConsumerFactory() {
-        Map<String, Object> props = consumerProps();
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-                new JsonDeserializer<>(AnswerSubmittedEvent.class, false));
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, AnswerSubmittedEvent> answerKafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, AnswerSubmittedEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(answerConsumerFactory());
+        factory.setConsumerFactory(examCompletedConsumerFactory());
+        factory.setReplyTemplate(examResultReplyKafkaTemplate());
         return factory;
     }
 

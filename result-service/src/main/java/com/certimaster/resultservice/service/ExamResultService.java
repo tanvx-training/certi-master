@@ -1,8 +1,7 @@
 package com.certimaster.resultservice.service;
 
-import com.certimaster.common_library.event.AnswerSubmittedEvent;
-import com.certimaster.common_library.event.ExamSessionCreatedEvent;
-import com.certimaster.common_library.event.ExamSessionStartedEvent;
+import com.certimaster.common_library.event.ExamCompletedEvent;
+import com.certimaster.common_library.event.ExamResultResponse;
 
 /**
  * Service interface for exam result operations.
@@ -10,15 +9,11 @@ import com.certimaster.common_library.event.ExamSessionStartedEvent;
 public interface ExamResultService {
 
     /**
-     * Create a new exam session from event.
+     * Process a completed exam event and calculate results.
+     * Creates ExamResult, TopicPerformance, and QuestionResult records.
      *
-     * @param event the session started event
-     * @return the created event with session ID
+     * @param event the exam completed event containing session data and answers
+     * @return the exam result response with calculated scores and performance data
      */
-    ExamSessionCreatedEvent createSession(ExamSessionStartedEvent event);
-
-    /**
-     * Save or update an answer from event.
-     */
-    void saveAnswer(AnswerSubmittedEvent event);
+    ExamResultResponse processCompletedExam(ExamCompletedEvent event);
 }

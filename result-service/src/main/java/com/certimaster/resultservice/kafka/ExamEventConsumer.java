@@ -1,8 +1,7 @@
 package com.certimaster.resultservice.kafka;
 
-import com.certimaster.common_library.event.AnswerSubmittedEvent;
-import com.certimaster.common_library.event.ExamSessionCreatedEvent;
-import com.certimaster.common_library.event.ExamSessionStartedEvent;
+import com.certimaster.common_library.event.ExamCompletedEvent;
+import com.certimaster.common_library.event.ExamResultResponse;
 import com.certimaster.common_library.event.KafkaTopics;
 import com.certimaster.resultservice.service.ExamResultService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Kafka consumer for exam-related events.
+ * Processes ExamCompletedEvent and returns ExamResultResponse via reply pattern.
  */
 @Slf4j
 @Component
@@ -22,49 +22,42 @@ public class ExamEventConsumer {
     private final ExamResultService examResultService;
 
     /**
-     * Handle exam session started event and send reply with created session ID.
+     * Handle exam completed event and send reply with calculated results.
      * Uses Request-Reply pattern.
+     *
+     * @param event the exam completed event containing session data and answers
+     * @return the exam result response with calculated scores and performance data
      */
     @KafkaListener(
-            topics = KafkaTopics.EXAM_SESSION_STARTED,
-            containerFactory = "sessionKafkaListenerContainerFactory"
+            topics = KafkaTopics.EXAM_COMPLETED,
+            containerFactory = "examCompletedKafkaListenerContainerFactory"
     )
     @SendTo
-    public ExamSessionCreatedEvent handleSessionStarted(ExamSessionStartedEvent event) {
-        log.info("Received ExamSessionStartedEvent for user {} exam {}",
-                event.getUserId(), event.getExamId());
-
-        ExamSessionCreatedEvent reply = examResultService.createSession(event);
-
-        if (reply.isSuccess()) {
-            log.info("Successfully created session {} for user {} exam {}",
-                    reply.getSessionId(), event.getUserId(), event.getExamId());
-        } else {
-            log.error("Failed to create session for user {} exam {}: {}",
-                    event.getUserId(), event.getExamId(), reply.getErrorMessage());
-        }
-
-        return reply;
-    }
-
-    /**
-     * Handle answer submitted event.
-     */
-    @KafkaListener(
-            topics = KafkaTopics.ANSWER_SUBMITTED,
-            containerFactory = "answerKafkaListenerContainerFactory"
-    )
-    public void handleAnswerSubmitted(AnswerSubmittedEvent event) {
-        log.info("Received AnswerSubmittedEvent for session {} question {}",
-                event.getSessionId(), event.getQuestionId());
+    public ExamResultResponse handleExamCompleted(ExamCompletedEvent event) {
+        log.info("Received ExamCompletedEvent for session {} user {} exam {}",
+                event.getSessionId(), event.getUserId(), event.getExamId());
 
         try {
-            examResultService.saveAnswer(event);
-            log.info("Successfully saved answer for session {} question {}",
-                    event.getSessionId(), event.getQuestionId());
+            ExamResultResponse response = examResultService.processCompletedExam(event);
+
+            if (response.isSuccess()) {
+                log.info("Successfully processed exam completion for session {} - score: {}%, status: {}",
+                        event.getSessionId(), response.getPercentage(), response.getPassStatus());
+            } else {
+                log.error("Failed to process exam completion for session {}: {}",
+                        event.getSessionId(), response.getErrorMessage());
+            }
+
+            return response;
         } catch (Exception e) {
-            log.error("Failed to process AnswerSubmittedEvent for session {} question {}",
-                    event.getSessionId(), event.getQuestionId(), e);
+            log.error("Error processing ExamCompletedEvent for session {}", event.getSessionId(), e);
+            return ExamResultResponse.builder()
+                    .sessionId(event.getSessionId())
+                    .userId(event.getUserId())
+                    .examId(event.getExamId())
+                    .success(false)
+                    .errorMessage("Failed to process exam completion: " + e.getMessage())
+                    .build();
         }
     }
 }

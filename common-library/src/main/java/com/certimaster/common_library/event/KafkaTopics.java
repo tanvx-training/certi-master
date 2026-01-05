@@ -10,22 +10,14 @@ public final class KafkaTopics {
     }
 
     /**
-     * Topic for exam session started events.
+     * Topic for exam completed events.
+     * Sent from exam-service to result-service when a user completes an exam.
      */
-    public static final String EXAM_SESSION_STARTED = "exam-session-started";
+    public static final String EXAM_COMPLETED = "exam-completed";
 
     /**
-     * Topic for answer submitted events.
+     * Topic for exam result reply events.
+     * Sent from result-service back to exam-service with calculated results.
      */
-    public static final String ANSWER_SUBMITTED = "answer-submitted";
-
-    /**
-     * Topic for exam session completed events.
-     */
-    public static final String EXAM_SESSION_COMPLETED = "exam-session-completed";
-
-    /**
-     * Topic for exam session created reply events.
-     */
-    public static final String EXAM_SESSION_CREATED_REPLY = "exam-session-created-reply";
+    public static final String EXAM_RESULT_REPLY = "exam-result-reply";
 }

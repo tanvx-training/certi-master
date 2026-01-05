@@ -1,8 +1,7 @@
 package com.certimaster.exam_service.kafka;
 
-import com.certimaster.common_library.event.AnswerSubmittedEvent;
-import com.certimaster.common_library.event.ExamSessionCreatedEvent;
-import com.certimaster.common_library.event.ExamSessionStartedEvent;
+import com.certimaster.common_library.event.ExamCompletedEvent;
+import com.certimaster.common_library.event.ExamResultResponse;
 import com.certimaster.common_library.event.KafkaTopics;
 import com.certimaster.common_library.exception.business.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -10,15 +9,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 import org.springframework.kafka.requestreply.RequestReplyFuture;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -31,77 +26,53 @@ import java.util.concurrent.TimeoutException;
 @RequiredArgsConstructor
 public class ExamEventProducer {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final ReplyingKafkaTemplate<String, ExamSessionStartedEvent, ExamSessionCreatedEvent> replyingKafkaTemplate;
+    private final ReplyingKafkaTemplate<String, ExamCompletedEvent, ExamResultResponse> examCompletedReplyingKafkaTemplate;
 
     @Value("${exam.session.reply-timeout-seconds:30}")
     private long replyTimeoutSeconds;
 
     /**
-     * Publish exam session started event and wait for reply with session ID.
+     * Publish exam completed event and wait for result calculation reply.
      *
-     * @param event the session started event
-     * @return the created session event with session ID
+     * @param event the exam completed event
+     * @return the exam result response with calculated scores
      */
-    public ExamSessionCreatedEvent publishSessionStartedAndWaitReply(ExamSessionStartedEvent event) {
-        String key = event.getUserId() + "-" + event.getExamId();
+    public ExamResultResponse publishExamCompletedAndWaitReply(ExamCompletedEvent event) {
+        String key = event.getSessionId() + "-" + event.getUserId();
 
-        ProducerRecord<String, ExamSessionStartedEvent> record =
-                new ProducerRecord<>(KafkaTopics.EXAM_SESSION_STARTED, key, event);
+        ProducerRecord<String, ExamCompletedEvent> record =
+                new ProducerRecord<>(KafkaTopics.EXAM_COMPLETED, key, event);
 
-        log.info("Sending ExamSessionStartedEvent for user {} exam {} and waiting for reply",
-                event.getUserId(), event.getExamId());
+        log.info("Sending ExamCompletedEvent for session {} user {} and waiting for result reply",
+                event.getSessionId(), event.getUserId());
 
         try {
-            RequestReplyFuture<String, ExamSessionStartedEvent, ExamSessionCreatedEvent> future =
-                    replyingKafkaTemplate.sendAndReceive(record, Duration.ofSeconds(replyTimeoutSeconds));
+            RequestReplyFuture<String, ExamCompletedEvent, ExamResultResponse> future =
+                    examCompletedReplyingKafkaTemplate.sendAndReceive(record, Duration.ofSeconds(replyTimeoutSeconds));
 
-            ConsumerRecord<String, ExamSessionCreatedEvent> reply = future.get(replyTimeoutSeconds, TimeUnit.SECONDS);
-            ExamSessionCreatedEvent createdEvent = reply.value();
+            ConsumerRecord<String, ExamResultResponse> reply = future.get(replyTimeoutSeconds, TimeUnit.SECONDS);
+            ExamResultResponse resultResponse = reply.value();
 
-            if (createdEvent.isSuccess()) {
-                log.info("Received reply: session {} created for user {} exam {}",
-                        createdEvent.getSessionId(), event.getUserId(), event.getExamId());
+            if (resultResponse.isSuccess()) {
+                log.info("Received result reply: session {} score {}% status {}",
+                        event.getSessionId(), resultResponse.getPercentage(), resultResponse.getPassStatus());
             } else {
-                log.error("Session creation failed: {}", createdEvent.getErrorMessage());
-                throw BusinessException.invalidInput(createdEvent.getErrorMessage());
+                log.error("Result calculation failed: {}", resultResponse.getErrorMessage());
+                throw BusinessException.invalidInput(resultResponse.getErrorMessage());
             }
 
-            return createdEvent;
+            return resultResponse;
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("Interrupted while waiting for session creation reply", e);
-            throw BusinessException.invalidInput("Session creation was interrupted");
+            log.error("Interrupted while waiting for result calculation reply", e);
+            throw BusinessException.invalidInput("Result calculation was interrupted");
         } catch (ExecutionException e) {
-            log.error("Error during session creation", e);
-            throw BusinessException.invalidInput("Failed to create session: " + e.getMessage());
+            log.error("Error during result calculation", e);
+            throw BusinessException.invalidInput("Failed to calculate results: " + e.getMessage());
         } catch (TimeoutException e) {
-            log.error("Timeout waiting for session creation reply", e);
-            throw BusinessException.invalidInput("Session creation timed out. Please try again.");
+            log.error("Timeout waiting for result calculation reply", e);
+            throw BusinessException.invalidInput("Result calculation timed out. Please try again.");
         }
-    }
-
-    /**
-     * Publish answer submitted event (fire and forget).
-     */
-    public void publishAnswerSubmitted(AnswerSubmittedEvent event) {
-        String key = String.valueOf(event.getSessionId());
-
-        CompletableFuture<SendResult<String, Object>> future =
-                kafkaTemplate.send(KafkaTopics.ANSWER_SUBMITTED, key, event);
-
-        future.whenComplete((result, ex) -> {
-            if (Objects.isNull(ex)) {
-                log.info("Sent AnswerSubmittedEvent for session {} question {} to partition {} with offset {}",
-                        event.getSessionId(),
-                        event.getQuestionId(),
-                        result.getRecordMetadata().partition(),
-                        result.getRecordMetadata().offset());
-            } else {
-                log.error("Failed to send AnswerSubmittedEvent for session {} question {}",
-                        event.getSessionId(), event.getQuestionId(), ex);
-            }
-        });
     }
 }

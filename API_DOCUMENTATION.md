@@ -8,7 +8,9 @@ Tài liệu API chi tiết cho dự án front-end tích hợp với back-end Cer
 | Service | Port | Base URL |
 |---------|------|----------|
 | Auth Service | 8081 | `http://localhost:8081/api/v1` |
+| Exam Service | 8082 | `http://localhost:8082/api/v1` |
 | Blog Service | 8083 | `http://localhost:8083/api/v1` |
+| Result Service | 8084 | `http://localhost:8084/api/v1` |
 
 ### Response Format
 Tất cả API đều trả về cấu trúc `ResponseDto<T>`:
@@ -45,6 +47,32 @@ Các API có phân trang trả về `PageDto<T>`:
 - Header: `Authorization: Bearer <access_token>`
 - Access token hết hạn sau 15 phút
 - Refresh token hết hạn sau 7 ngày
+
+---
+
+## EXAM SERVICE API
+
+> **Xem tài liệu chi tiết:** [exam-service/docs/EXAM_SESSION_API.md](exam-service/docs/EXAM_SESSION_API.md)
+
+### Exam Session API - Tóm tắt
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/exam-sessions/exam/{examId}/start` | Bắt đầu phiên thi mới |
+| GET | `/api/v1/exam-sessions/{sessionId}` | Lấy thông tin phiên thi |
+| GET | `/api/v1/exam-sessions/active` | Lấy danh sách phiên thi đang hoạt động |
+| POST | `/api/v1/exam-sessions/{sessionId}/answer` | Gửi câu trả lời |
+| POST | `/api/v1/exam-sessions/{sessionId}/complete` | Hoàn thành phiên thi |
+
+### Exam Mode
+- `PRACTICE`: Hiển thị đáp án ngay sau khi trả lời
+- `TIMED`: Không hiển thị đáp án cho đến khi hoàn thành
+
+### Session Status
+- `IN_PROGRESS`: Đang thi
+- `COMPLETED`: Đã hoàn thành
+- `ABANDONED`: Đã hủy
+- `TIMED_OUT`: Hết thời gian
 
 ---
 

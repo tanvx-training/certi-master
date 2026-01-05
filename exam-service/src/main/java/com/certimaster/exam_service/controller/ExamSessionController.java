@@ -1,22 +1,27 @@
 package com.certimaster.exam_service.controller;
 
 import com.certimaster.common_library.dto.ResponseDto;
+import com.certimaster.common_library.event.ExamResultResponse;
 import com.certimaster.exam_service.dto.request.AnswerQuestionRequest;
 import com.certimaster.exam_service.dto.request.StartExamRequest;
 import com.certimaster.exam_service.dto.response.AnswerFeedbackResponse;
 import com.certimaster.exam_service.dto.response.ExamSessionResponse;
+import com.certimaster.exam_service.dto.response.UserExamSessionResponse;
 import com.certimaster.exam_service.service.ExamSessionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * REST Controller for Exam Session API.
@@ -47,6 +52,33 @@ public class ExamSessionController {
     }
 
     /**
+     * Get session details by ID.
+     */
+    @GetMapping("/{sessionId}")
+    public ResponseEntity<ResponseDto<UserExamSessionResponse>> getSession(
+            @PathVariable Long sessionId,
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+        log.debug("Get session {} for user {}", sessionId, userId);
+
+        UserExamSessionResponse result = examSessionService.getSession(sessionId, userId);
+        return ResponseEntity.ok(ResponseDto.success("Session retrieved successfully", result));
+    }
+
+    /**
+     * Get all active sessions for the current user.
+     */
+    @GetMapping("/active")
+    public ResponseEntity<ResponseDto<List<UserExamSessionResponse>>> getActiveSessions(
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+        log.debug("Get active sessions for user {}", userId);
+
+        List<UserExamSessionResponse> result = examSessionService.getActiveSessions(userId);
+        return ResponseEntity.ok(ResponseDto.success("Active sessions retrieved successfully", result));
+    }
+
+    /**
      * Submit an answer for a question.
      */
     @PostMapping("/{sessionId}/answer")
@@ -65,13 +97,13 @@ public class ExamSessionController {
      * Complete/finish an exam session.
      */
     @PostMapping("/{sessionId}/complete")
-    public ResponseEntity<ResponseDto<Void>> completeSession(
+    public ResponseEntity<ResponseDto<ExamResultResponse>> completeSession(
             @PathVariable Long sessionId,
             @RequestHeader("X-User-Id") Long userId
     ) {
         log.info("Complete session {} for user {}", sessionId, userId);
 
-        examSessionService.completeSession(sessionId, userId);
-        return ResponseEntity.ok(ResponseDto.success("Exam session completed successfully", null));
+        ExamResultResponse result = examSessionService.completeSession(sessionId, userId);
+        return ResponseEntity.ok(ResponseDto.success("Exam session completed successfully", result));
     }
 }
