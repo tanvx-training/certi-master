@@ -63,7 +63,7 @@ public class AuthController {
      * Returns user info from JWT token via SecurityContext
      * Requirement 5.2: Valid JWT populates SecurityContext with user details
      */
-    @GetMapping("/current")
+    @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseDto<UserResponse>> getCurrentUser() {
         log.info("Get current user request received");

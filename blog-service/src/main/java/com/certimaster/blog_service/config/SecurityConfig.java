@@ -1,6 +1,6 @@
-package com.certimaster.exam_service.config;
+package com.certimaster.blog_service.config;
 
-import com.certimaster.exam_service.security.JwtAuthenticationFilter;
+import com.certimaster.blog_service.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +20,15 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.time.Instant;
 import java.util.Arrays;
 
+/**
+ * Security Configuration for Blog Service
+ * 
+ * Requirements:
+ * - 10.1: Reject requests without author permission for post creation (403 Forbidden)
+ * - 10.2: Reject edit/delete of other user's posts without admin permission (403 Forbidden)
+ * - 10.3: Reject publish requests without publish permission (403 Forbidden)
+ * - 10.4: Allow any authenticated user to comment or react
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
@@ -31,8 +40,16 @@ public class SecurityConfig {
      * Public endpoints - accessible without authentication
      */
     private static final String[] PUBLIC_GET_ENDPOINTS = {
-            "/api/v1/certifications",
-            "/api/v1/certifications/{id}",
+            "/api/v1/posts",
+            "/api/v1/posts/{slug}",
+            "/api/v1/posts/{id}/view",
+            "/api/v1/categories",
+            "/api/v1/categories/{slug}",
+            "/api/v1/categories/{slug}/posts",
+            "/api/v1/tags",
+            "/api/v1/tags/{slug}",
+            "/api/v1/tags/{slug}/posts",
+            "/api/v1/posts/{postId}/comments"
     };
 
     /**
