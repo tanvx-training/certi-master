@@ -3,55 +3,87 @@ package com.certimaster.exam_service.dto.mapper;
 import com.certimaster.exam_service.dto.request.TopicRequest;
 import com.certimaster.exam_service.dto.response.TopicResponse;
 import com.certimaster.exam_service.entity.Topic;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.springframework.stereotype.Component;
 
 /**
- * MapStruct mapper for converting between Topic entities and DTOs.
+ * Manual mapper for converting between Topic entities and DTOs.
  * Handles transformation of topic data between domain and API layers.
+ * Provides null-safe mapping operations with nested null handling.
  */
-@Mapper(
-    componentModel = "spring",
-    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
-)
-public interface TopicMapper {
+@Component
+public class TopicMapper {
 
     /**
      * Converts a Topic entity to a TopicResponse DTO.
      *
      * @param topic the topic entity
-     * @return the topic response DTO
+     * @return the topic response DTO, or null if input is null
      */
-    @Mapping(target = "id", source = "id")
-    @Mapping(target = "createdAt", source = "createdAt")
-    @Mapping(target = "updatedAt", source = "updatedAt")
-    @Mapping(target = "createdBy", source = "createdBy")
-    @Mapping(target = "updatedBy", source = "updatedBy")
-    @Mapping(target = "certificationId", source = "certification.id")
-    TopicResponse toResponse(Topic topic);
+    public TopicResponse toResponse(Topic topic) {
+        if (topic == null) {
+            return null;
+        }
+        return TopicResponse.builder()
+                .id(topic.getId())
+                .createdAt(topic.getCreatedAt())
+                .updatedAt(topic.getUpdatedAt())
+                .createdBy(topic.getCreatedBy())
+                .updatedBy(topic.getUpdatedBy())
+                .certificationId(topic.getCertification() != null ? topic.getCertification().getId() : null)
+                .name(topic.getName())
+                .code(topic.getCode())
+                .description(topic.getDescription())
+                .weightPercentage(topic.getWeightPercentage())
+                .orderIndex(topic.getOrderIndex())
+                .build();
+    }
 
     /**
      * Converts a TopicRequest DTO to a Topic entity.
      * The certification relationship must be set separately.
      *
      * @param request the topic request DTO
-     * @return the topic entity
+     * @return the topic entity, or null if input is null
      */
-    @Mapping(target = "certification", ignore = true)
-    @Mapping(target = "questions", ignore = true)
-    Topic toEntity(TopicRequest request);
+    public Topic toEntity(TopicRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return Topic.builder()
+                .name(request.getName())
+                .code(request.getCode())
+                .description(request.getDescription())
+                .weightPercentage(request.getWeightPercentage())
+                .orderIndex(request.getOrderIndex())
+                .build();
+    }
 
     /**
      * Updates an existing Topic entity with data from a TopicRequest DTO.
-     * Ignores null values in the request to allow partial updates.
+     * Only updates non-null fields from the request (partial update).
      * The certification relationship is not updated.
      *
      * @param topic the target topic entity to update
      * @param request the topic request DTO with updated data
      */
-    @Mapping(target = "certification", ignore = true)
-    @Mapping(target = "questions", ignore = true)
-    void updateEntity(@MappingTarget Topic topic, TopicRequest request);
+    public void updateEntity(Topic topic, TopicRequest request) {
+        if (topic == null || request == null) {
+            return;
+        }
+        if (request.getName() != null) {
+            topic.setName(request.getName());
+        }
+        if (request.getCode() != null) {
+            topic.setCode(request.getCode());
+        }
+        if (request.getDescription() != null) {
+            topic.setDescription(request.getDescription());
+        }
+        if (request.getWeightPercentage() != null) {
+            topic.setWeightPercentage(request.getWeightPercentage());
+        }
+        if (request.getOrderIndex() != null) {
+            topic.setOrderIndex(request.getOrderIndex());
+        }
+    }
 }

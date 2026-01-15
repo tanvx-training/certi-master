@@ -1,4 +1,4 @@
-package com.certimaster.resultservice.config;
+package com.certimaster.result_service.config;
 
 import com.certimaster.common_library.event.ExamCompletedEvent;
 import com.certimaster.common_library.event.ExamResultResponse;
@@ -31,7 +31,7 @@ import java.util.Map;
 @Configuration
 public class KafkaConsumerConfig {
 
-    @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
+    @Value("${spring.kafka.bootstrap-servers:localhost:9092,localhost:9093,localhost:9094}")
     private String bootstrapServers;
 
     @Value("${spring.kafka.consumer.group-id:result-service-group}")

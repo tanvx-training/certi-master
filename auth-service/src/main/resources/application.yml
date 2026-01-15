@@ -30,7 +30,7 @@ spring:
 # Generate with: openssl genrsa -out private.pem 2048 && openssl rsa -in private.pem -pubout -out public.pem
 jwt:
   # Access token expiration: 15 minutes (Requirement 4.2)
-  access-token-expiration: 900000
+  access-token-expiration: 604800000
   # Refresh token expiration: 7 days (Requirement 4.3)
   refresh-token-expiration: 604800000
   # JWT issuer for token validation (Requirement 4.4)

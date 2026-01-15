@@ -195,7 +195,6 @@ certi-master/
 <properties>
     <java.version>21</java.version>
     <spring-cloud.version>2025.0.0</spring-cloud.version>
-    <mapstruct.version>1.5.5.Final</mapstruct.version>
     <lombok.version>1.18.30</lombok.version>
 </properties>
 ```
@@ -1410,7 +1409,6 @@ public class UserService {
 
 ### Tools & Libraries
 - [Lombok](https://projectlombok.org/)
-- [MapStruct](https://mapstruct.org/)
 - [Swagger/OpenAPI](https://swagger.io/)
 
 ### Community

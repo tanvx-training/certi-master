@@ -3,31 +3,68 @@ package com.certimaster.exam_service.dto.mapper;
 import com.certimaster.exam_service.dto.request.TagRequest;
 import com.certimaster.exam_service.dto.response.TagResponse;
 import com.certimaster.exam_service.entity.Tag;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.springframework.stereotype.Component;
 
 /**
- * MapStruct mapper for converting between Tag entities and DTOs.
+ * Manual mapper for converting between Tag entities and DTOs.
+ * Provides null-safe mapping operations.
  */
-@Mapper(
-        componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
-)
-public interface TagMapper {
+@Component
+public class TagMapper {
 
     /**
      * Converts a Tag entity to a TagResponse DTO.
+     *
+     * @param tag the tag entity
+     * @return the tag response DTO, or null if input is null
      */
-    TagResponse toResponse(Tag tag);
+    public TagResponse toResponse(Tag tag) {
+        if (tag == null) {
+            return null;
+        }
+        return TagResponse.builder()
+                .id(tag.getId())
+                .createdAt(tag.getCreatedAt())
+                .updatedAt(tag.getUpdatedAt())
+                .createdBy(tag.getCreatedBy())
+                .updatedBy(tag.getUpdatedBy())
+                .name(tag.getName())
+                .status(tag.getStatus())
+                .build();
+    }
 
     /**
      * Converts a TagRequest DTO to a Tag entity.
+     *
+     * @param request the tag request DTO
+     * @return the tag entity, or null if input is null
      */
-    Tag toEntity(TagRequest request);
+    public Tag toEntity(TagRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return Tag.builder()
+                .name(request.getName())
+                .status(request.getStatus())
+                .build();
+    }
 
     /**
      * Updates an existing Tag entity with data from a TagRequest DTO.
+     * Only updates non-null fields from the request (partial update).
+     *
+     * @param tag the target tag entity to update
+     * @param request the tag request DTO with updated data
      */
-    void updateEntity(@MappingTarget Tag tag, TagRequest request);
+    public void updateEntity(Tag tag, TagRequest request) {
+        if (tag == null || request == null) {
+            return;
+        }
+        if (request.getName() != null) {
+            tag.setName(request.getName());
+        }
+        if (request.getStatus() != null) {
+            tag.setStatus(request.getStatus());
+        }
+    }
 }

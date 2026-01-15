@@ -31,7 +31,7 @@ import java.util.UUID;
 @Configuration
 public class KafkaReplyConfig {
 
-    @Value("${spring.kafka.bootstrap-servers:localhost:9092,localhost:9094,localhost:9096}")
+    @Value("${spring.kafka.bootstrap-servers:localhost:29092,localhost:29093,localhost:29094}")
     private String bootstrapServers;
 
     @Value("${exam.session.reply-timeout-seconds:30}")

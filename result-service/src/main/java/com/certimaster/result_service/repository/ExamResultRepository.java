@@ -1,6 +1,6 @@
-package com.certimaster.resultservice.repository;
+package com.certimaster.result_service.repository;
 
-import com.certimaster.resultservice.entity.ExamResult;
+import com.certimaster.result_service.entity.ExamResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

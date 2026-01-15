@@ -3,54 +3,71 @@ package com.certimaster.blog_service.dto.mapper;
 import com.certimaster.blog_service.dto.request.CategoryRequest;
 import com.certimaster.blog_service.dto.response.CategoryResponse;
 import com.certimaster.blog_service.entity.PostCategory;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.springframework.stereotype.Component;
 
 /**
- * MapStruct mapper for converting between PostCategory entities and DTOs.
- * Handles transformation of category data between persistence and API layers.
+ * Manual mapper for converting between PostCategory entities and DTOs.
+ * Provides null-safe mapping operations.
  */
-@Mapper(
-    componentModel = "spring",
-    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
-)
-public interface CategoryMapper {
+@Component
+public class CategoryMapper {
 
     /**
      * Converts a PostCategory entity to CategoryResponse DTO.
      * Note: postCount must be set separately as it requires a query.
      *
      * @param category the category entity
-     * @return the category response DTO
+     * @return the category response DTO, or null if input is null
      */
-    @Mapping(target = "postCount", ignore = true)
-    CategoryResponse toResponse(PostCategory category);
+    public CategoryResponse toResponse(PostCategory category) {
+        if (category == null) {
+            return null;
+        }
+        return CategoryResponse.builder()
+                .id(category.getId())
+                .createdAt(category.getCreatedAt())
+                .updatedAt(category.getUpdatedAt())
+                .createdBy(category.getCreatedBy())
+                .updatedBy(category.getUpdatedBy())
+                .name(category.getName())
+                .slug(category.getSlug())
+                .description(category.getDescription())
+                .build();
+    }
 
     /**
      * Converts a CategoryRequest DTO to PostCategory entity.
      * Note: slug must be generated separately.
      *
      * @param request the category request DTO
-     * @return the category entity
+     * @return the category entity, or null if input is null
      */
-    @Mapping(target = "slug", ignore = true)
-    @Mapping(target = "postMappings", ignore = true)
-    PostCategory toEntity(CategoryRequest request);
+    public PostCategory toEntity(CategoryRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return PostCategory.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .build();
+    }
 
     /**
      * Updates an existing PostCategory entity with data from CategoryRequest DTO.
+     * Only updates non-null fields from the request (partial update).
      *
      * @param category the category entity to update
      * @param request the category request DTO with new data
      */
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "slug", ignore = true)
-    @Mapping(target = "postMappings", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    void updateEntity(@MappingTarget PostCategory category, CategoryRequest request);
+    public void updateEntity(PostCategory category, CategoryRequest request) {
+        if (category == null || request == null) {
+            return;
+        }
+        if (request.getName() != null) {
+            category.setName(request.getName());
+        }
+        if (request.getDescription() != null) {
+            category.setDescription(request.getDescription());
+        }
+    }
 }

@@ -1,9 +1,9 @@
-package com.certimaster.resultservice.kafka;
+package com.certimaster.result_service.kafka;
 
 import com.certimaster.common_library.event.ExamCompletedEvent;
 import com.certimaster.common_library.event.ExamResultResponse;
 import com.certimaster.common_library.event.KafkaTopics;
-import com.certimaster.resultservice.service.ExamResultService;
+import com.certimaster.result_service.service.ExamResultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;

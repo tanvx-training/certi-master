@@ -27,7 +27,7 @@ spring:
 
 # Kafka Configuration
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092,localhost:29093,localhost:29094}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -61,6 +61,9 @@ logging:
     com.certimaster.auth_service: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
+    org.apache.kafka: WARN
+    org.apache.kafka.clients.NetworkClient: ERROR
+    org.springframework.kafka: WARN
 
 # Actuator
 management:

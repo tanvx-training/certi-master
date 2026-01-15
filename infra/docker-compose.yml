@@ -1,0 +1,222 @@
+version: '3.8'
+
+services:
+  # Zookeeper for Kafka cluster coordination
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - certimaster-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Kafka Broker 1
+  kafka-1:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-1
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_NUM_PARTITIONS: 3
+    volumes:
+      - kafka-1-data:/var/lib/kafka/data
+    networks:
+      - certimaster-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # Kafka Broker 2
+  kafka-2:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-2
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9093:9092"
+      - "29093:29093"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,PLAINTEXT_HOST://localhost:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_NUM_PARTITIONS: 3
+    volumes:
+      - kafka-2-data:/var/lib/kafka/data
+    networks:
+      - certimaster-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # Kafka Broker 3
+  kafka-3:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-3
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9094:9092"
+      - "29094:29094"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,PLAINTEXT_HOST://localhost:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_NUM_PARTITIONS: 3
+    volumes:
+      - kafka-3-data:/var/lib/kafka/data
+    networks:
+      - certimaster-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # Kafka UI for monitoring
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: certimaster-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - certimaster-network
+
+  # Redis Master
+  redis-master:
+    image: redis:7.2-alpine
+    container_name: redis-master
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-master-data:/data
+    networks:
+      - certimaster-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Replica 1
+  redis-replica-1:
+    image: redis:7.2-alpine
+    container_name: redis-replica-1
+    command: redis-server --appendonly yes --replicaof redis-master 6379 --masterauth ${REDIS_PASSWORD:-redis123} --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-replica-1-data:/data
+    depends_on:
+      redis-master:
+        condition: service_healthy
+    networks:
+      - certimaster-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Replica 2
+  redis-replica-2:
+    image: redis:7.2-alpine
+    container_name: redis-replica-2
+    command: redis-server --appendonly yes --replicaof redis-master 6379 --masterauth ${REDIS_PASSWORD:-redis123} --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis-replica-2-data:/data
+    depends_on:
+      redis-master:
+        condition: service_healthy
+    networks:
+      - certimaster-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Commander UI
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    environment:
+      REDIS_HOSTS: master:redis-master:6379:0:${REDIS_PASSWORD:-redis123},replica1:redis-replica-1:6379:0:${REDIS_PASSWORD:-redis123},replica2:redis-replica-2:6379:0:${REDIS_PASSWORD:-redis123}
+    ports:
+      - "8091:8081"
+    depends_on:
+      - redis-master
+      - redis-replica-1
+      - redis-replica-2
+    networks:
+      - certimaster-network
+
+networks:
+  certimaster-network:
+    driver: bridge
+    name: certimaster-network
+
+volumes:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
+  redis-master-data:
+  redis-replica-1-data:
+  redis-replica-2-data:

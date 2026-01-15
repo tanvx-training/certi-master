@@ -1,4 +1,4 @@
-package com.certimaster.resultservice.config;
+package com.certimaster.result_service.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

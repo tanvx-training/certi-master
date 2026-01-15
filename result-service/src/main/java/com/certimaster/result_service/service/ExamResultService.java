@@ -1,4 +1,4 @@
-package com.certimaster.resultservice.service;
+package com.certimaster.result_service.service;
 
 import com.certimaster.common_library.event.ExamCompletedEvent;
 import com.certimaster.common_library.event.ExamResultResponse;

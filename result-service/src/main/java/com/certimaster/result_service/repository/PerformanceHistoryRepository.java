@@ -1,6 +1,6 @@
-package com.certimaster.resultservice.repository;
+package com.certimaster.result_service.repository;
 
-import com.certimaster.resultservice.entity.PerformanceHistory;
+import com.certimaster.result_service.entity.PerformanceHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

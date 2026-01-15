@@ -3,36 +3,51 @@ package com.certimaster.blog_service.dto.mapper;
 import com.certimaster.blog_service.dto.response.ReactionResponse;
 import com.certimaster.blog_service.entity.CommentReaction;
 import com.certimaster.blog_service.entity.PostReaction;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.springframework.stereotype.Component;
 
 /**
- * MapStruct mapper for converting between Reaction entities and DTOs.
- * Handles transformation of reaction data between persistence and API layers.
+ * Manual mapper for converting between Reaction entities and DTOs.
+ * Provides null-safe mapping operations.
  */
-@Mapper(
-    componentModel = "spring",
-    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
-)
-public interface ReactionMapper {
+@Component
+public class ReactionMapper {
 
     /**
      * Converts a PostReaction entity to ReactionResponse DTO.
      *
      * @param reaction the post reaction entity
-     * @return the reaction response DTO
+     * @return the reaction response DTO, or null if input is null
      */
-    @Mapping(target = "reactionType", source = "reactionType")
-    ReactionResponse toResponse(PostReaction reaction);
+    public ReactionResponse toResponse(PostReaction reaction) {
+        if (reaction == null) {
+            return null;
+        }
+        return ReactionResponse.builder()
+                .id(reaction.getId())
+                .userId(reaction.getUserId())
+                .reactionType(reaction.getReactionType() != null 
+                        ? reaction.getReactionType().name() 
+                        : null)
+                .createdAt(reaction.getCreatedAt())
+                .build();
+    }
 
     /**
      * Converts a CommentReaction entity to ReactionResponse DTO.
      * Note: CommentReaction doesn't have reactionType, defaults to LIKE.
      *
      * @param reaction the comment reaction entity
-     * @return the reaction response DTO
+     * @return the reaction response DTO, or null if input is null
      */
-    @Mapping(target = "reactionType", constant = "LIKE")
-    ReactionResponse toResponse(CommentReaction reaction);
+    public ReactionResponse toResponse(CommentReaction reaction) {
+        if (reaction == null) {
+            return null;
+        }
+        return ReactionResponse.builder()
+                .id(reaction.getId())
+                .userId(reaction.getUserId())
+                .reactionType("LIKE")
+                .createdAt(reaction.getCreatedAt())
+                .build();
+    }
 }

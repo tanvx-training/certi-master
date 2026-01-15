@@ -3,54 +3,66 @@ package com.certimaster.blog_service.dto.mapper;
 import com.certimaster.blog_service.dto.request.TagRequest;
 import com.certimaster.blog_service.dto.response.TagResponse;
 import com.certimaster.blog_service.entity.PostTag;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.springframework.stereotype.Component;
 
 /**
- * MapStruct mapper for converting between PostTag entities and DTOs.
- * Handles transformation of tag data between persistence and API layers.
+ * Manual mapper for converting between PostTag entities and DTOs.
+ * Provides null-safe mapping operations.
  */
-@Mapper(
-    componentModel = "spring",
-    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
-)
-public interface TagMapper {
+@Component
+public class TagMapper {
 
     /**
      * Converts a PostTag entity to TagResponse DTO.
      * Note: postCount must be set separately as it requires a query.
      *
      * @param tag the tag entity
-     * @return the tag response DTO
+     * @return the tag response DTO, or null if input is null
      */
-    @Mapping(target = "postCount", ignore = true)
-    TagResponse toResponse(PostTag tag);
+    public TagResponse toResponse(PostTag tag) {
+        if (tag == null) {
+            return null;
+        }
+        return TagResponse.builder()
+                .id(tag.getId())
+                .createdAt(tag.getCreatedAt())
+                .updatedAt(tag.getUpdatedAt())
+                .createdBy(tag.getCreatedBy())
+                .updatedBy(tag.getUpdatedBy())
+                .name(tag.getName())
+                .slug(tag.getSlug())
+                .build();
+    }
 
     /**
      * Converts a TagRequest DTO to PostTag entity.
      * Note: slug must be generated separately.
      *
      * @param request the tag request DTO
-     * @return the tag entity
+     * @return the tag entity, or null if input is null
      */
-    @Mapping(target = "slug", ignore = true)
-    @Mapping(target = "postMappings", ignore = true)
-    PostTag toEntity(TagRequest request);
+    public PostTag toEntity(TagRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return PostTag.builder()
+                .name(request.getName())
+                .build();
+    }
 
     /**
      * Updates an existing PostTag entity with data from TagRequest DTO.
+     * Only updates non-null fields from the request (partial update).
      *
      * @param tag the tag entity to update
      * @param request the tag request DTO with new data
      */
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "slug", ignore = true)
-    @Mapping(target = "postMappings", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    void updateEntity(@MappingTarget PostTag tag, TagRequest request);
+    public void updateEntity(PostTag tag, TagRequest request) {
+        if (tag == null || request == null) {
+            return;
+        }
+        if (request.getName() != null) {
+            tag.setName(request.getName());
+        }
+    }
 }

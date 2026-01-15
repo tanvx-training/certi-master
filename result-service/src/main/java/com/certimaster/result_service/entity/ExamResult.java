@@ -1,4 +1,4 @@
-package com.certimaster.resultservice.entity;
+package com.certimaster.result_service.entity;
 
 import com.certimaster.common_library.entity.BaseEntity;
 import jakarta.persistence.CascadeType;

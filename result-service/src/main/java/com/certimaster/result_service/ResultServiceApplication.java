@@ -1,4 +1,4 @@
-package com.certimaster.resultservice;
+package com.certimaster.result_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
